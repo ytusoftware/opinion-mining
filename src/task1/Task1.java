@@ -23,7 +23,6 @@ public class Task1 {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
         
         /* Cumleden kelime ve paragraftan cumle extractorlari */
         TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
@@ -32,7 +31,7 @@ public class Task1 {
         
         
         /* Ornek paragraf */
-        String input = "Merhaba! Bugün 2. köprü Fsm.'de trafik var mıydı?";   
+        String input = "Telefonun ekranının parlaklığını çok beğendim. Gerçekten çok etkileyici bir görünüşe sahip."; 
         
         /* Cumleler extract ediliyor */
         List<String> sentences = extractor.fromParagraph(input);
@@ -51,7 +50,7 @@ public class Task1 {
             for (Token token : tokens) {
                 results =  morphology.analyze(token.getText());
                 if(!results.getAnalysisResults().isEmpty())
-                    System.out.println(token.getText()+ " - " + results.getAnalysisResults().get(0).getDictionaryItem().primaryPos); // Kelime ve morfolojik kokeni ekrana basiliyor                
+                    System.out.println(token.getText()+ " - " + results.getAnalysisResults().get(0).getPos().shortForm); // Kelime ve morfolojik kokeni ekrana basiliyor                
             }
             sentenceId++;
         }
