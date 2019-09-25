@@ -15,6 +15,7 @@ import zemberek.tokenization.TurkishTokenizer;
 import ca.pfv.spmf.algorithms.frequentpatterns.apriori.AlgoApriori;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_count.Itemset;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_count.Itemsets;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,20 +42,17 @@ public class Task1 {
      */
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         
-        /* Cumleden kelime ve paragraftan cumle extractorlari */
-        TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
-        TurkishTokenizer tokenizer = TurkishTokenizer.DEFAULT;
-        TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
-        HashMap<String, Integer> possibleFeatureIndexMap = new HashMap<>();
-        String feature;
+                
+        int frequencyThreshold;                                                    /* The minimum frequency value which will be used for determining frequent nouns. Example values: 2,3,4 ..  */
+        String input;                                                              /* Holds the paragraph text */
+        int sentenceCount;                                                         /* Total number of sentences extracted from paragraph */
+        HashMap<String, Integer> possibleFeatureIndexMap = new HashMap<>();        /* Holds candidate features and their ids (ids are used for Apriori algorithm) */
+        
+                      
         
         
-        //OutputStream os = new FileOutputStream("test.txt");
-        PrintWriter out = new PrintWriter(fileToPath("test.txt"));
-        
-        
-        /* Ornek paragraf */
-        String input = "iPhone 7; simsiyah, siyah, gümüş, altın ve rose gold renk seçenekleriyle beraber geliyor. iPhone 7’nin görünümü iPhone 6 ile neredeyse aynı olduğu için, renk seçeneklerinin önemi oldukça büyük. Apple’ın da lansmanda simsiyah iPhone 7’yi öne çıkarmasının sebebi de bu. \n" +
+        /* Example paragraph (Iphone review) */
+        input = "iPhone 7; simsiyah, siyah, gümüş, altın ve rose gold renk seçenekleriyle beraber geliyor. iPhone 7’nin görünümü iPhone 6 ile neredeyse aynı olduğu için, renk seçeneklerinin önemi oldukça büyük. Apple’ın da lansmanda simsiyah iPhone 7’yi öne çıkarmasının sebebi de bu. \n" +
 "\n" +
 "iPhone 7 alacak olan kullanıcılar genellikle telefonlarının iPhone 6 ailesinden farklılaşmasını istiyor. Bu yüzden renk seçimlerinde ibre simsiyah ve siyah modellerine kaymış durumda. Simsiyah modelinin çizilmelere karşı daha hassas olacağını da hatırlatalım. iPhone 7’nin kasasında gözle görülen en büyük farklılık arka anten çizgileri. Yatay olarak kasanın altından ve üstünden geçen iki çizgi artık iPhone 7’de yok. Apple burada sadece bir çizgiyi kaldırmanın dışında, tasarımsal olarak fazla bir dokunuş yapmamış. \n" +
 "\n" +
@@ -72,45 +70,75 @@ public class Task1 {
 "\n" +
 "IP67 sertifikasını destekleyen iPhone 7, artık suya karşı dayanıklı. Apple’ın suya karşı garanti vermediğinin altını çizelim. Garanti verilmese de IP67 sertifikası sayesinde 1 metre derinliğinde yarım saate kadar suya dayandığının, herhangi bir aksilik durumunda garantiye girmeyeceğini tekrar vurgulayalım."; 
         
-        /* Cumleler extract ediliyor */
-        List<String> sentences = extractor.fromParagraph(input);
-        //sentences.size();
-        //System.out.println(sentences);
+       
+        /* Setting the Apriori threshold frequency */
+        frequencyThreshold = 3;
+     
         
-        /* Elde edilen her cumlenin kelimeleri sirayla extract edilip kokenleriyle birlikte ekrana basiliyor */
-        List<Token> tokens;
-        WordAnalysis results;
-        int sentenceId = 1;
-        int generalFeatureIndex = 1;
-        int initialFeatureIndex;
+        /* Extracting all candidate features from text (Looking at the nouns) */
+        sentenceCount = extractCandidateFeatures(input, possibleFeatureIndexMap);
         
+        /* After extracting the candidate features, real features are found by using Apriori algorithm */
+        getAprioriFeatures(frequencyThreshold, sentenceCount, possibleFeatureIndexMap);
+        
+        
+    }
+    
+    /* Gets root directory of the project to save text file. Takes the target paragraph (text) as parameter */
+    public static int extractCandidateFeatures(String input, HashMap<String, Integer> possibleFeatureIndexMap) throws UnsupportedEncodingException, FileNotFoundException {
+        
+        TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;     /* Sentence extractor from paragraph */
+        TurkishTokenizer tokenizer = TurkishTokenizer.DEFAULT;                     /* Word extractor from sentence */
+        TurkishMorphology morphology = TurkishMorphology.createWithDefaults();     /* Used for finding stems of words */                                                      
+        PrintWriter out;                                                           /* Used for writing candidate feature ids to the text file to make Apriori algo. work */
+        List<String> sentences;                                                    /* Holds sentences extracted from paragraph */
+        List<Token> tokens;                                                        /* Holds words extracted from sentence */
+        WordAnalysis results;                                                      /* Used for holding the result of Turkish morphological analysis */
+        int generalFeatureIndex;                                                   /* Used for labeling the candidate features for the use of Apriori algo. work */
+        int initialFeatureIndex;                                                   /* Holds the last given highest id to the candidate features */
+        SingleAnalysis sa;
+        
+        
+        
+        
+       /* Initializing the text file writer */
+        out = new PrintWriter(fileToPath("test.txt"));
+        
+        /* Sentences are extracted from paragraph */
+        sentences = extractor.fromParagraph(input);
+
+        
+        generalFeatureIndex = 1;
+        
+        /* All sentences in the paragraph are traversed respectively. */
         for (String sentence : sentences) {
             tokens = tokenizer.tokenize(sentence);
             
             /* Halihazirda tokenize edilmis cumlenin kelime bilgileri ekrana basiliyor */
             for (Token token : tokens) {
                 
-                results =  morphology.analyze(token.getText());
+                results =  morphology.analyze(token.getText());                              
                 
-                //System.out.println(results.getAnalysisResults().get(0).getStem());
-                
-                
-                
-                /* Checking if the initial word of the sentence is noun or not */
+                /* This control is required due to empty analysis result */
                 if( !results.getAnalysisResults().isEmpty() ) {
                     
-                    SingleAnalysis sa = results.getAnalysisResults().get(0);
+                    sa = results.getAnalysisResults().get(0);
                     
+                    /* Checking if the initial word of the sentence is noun or not */
                     if (sa.getPos().shortForm.compareTo("Noun") == 0) {
+                        
+                        /* If the initial candidate feature is already found, then its id (index) is given to the Apriori algo */
                         if (possibleFeatureIndexMap.containsKey(sa.getStem())) {
                             initialFeatureIndex = possibleFeatureIndexMap.get(sa.getStem());
-                        } /* Adding to the possible feature list */ else {
+                        }
+                        /* Otherwise, a new id is given to the initial candidate feature */
+                        else {
                             initialFeatureIndex = generalFeatureIndex;
                             generalFeatureIndex++;
                             possibleFeatureIndexMap.put(sa.getStem(), initialFeatureIndex);
                         }
 
-                        /* Then, adding the list index of possible feature to the transaction table of Apriori algorithm. */
+                        /* Then, adding the list index of possible feature to the transaction table of Apriori algorithm. (The library of Apriori algo. takes input from text file as integer values) */
                         out.print(initialFeatureIndex);
                         out.print(' ');
                     }
@@ -122,33 +150,46 @@ public class Task1 {
         }
         out.close();
         
-        String input_n = fileToPath("test.txt");
-	String output = null;
-	// Note : we here set the output file path to null
-	// because we want that the algorithm save the 
-	// result in memory for this example.
+        return sentences.size();
+    }
+    
+   
+    /* Gets root directory of the project to save text file */
+    public static void getAprioriFeatures(int freqThreshold, int sentenceCount, HashMap<String, Integer> possibleFeatureIndexMap) throws UnsupportedEncodingException, IOException {
+       
+        String input;       /* Holds the absolute path for input file for the use of Apriori algorithm */
+        String output;      /* This variable can be used for printing the Apriori algorithm results (stats) to a text file */
+        String feature;     /* Final features after Apriori algorithm */
+        
+      
+    
+        
+        /* Opening the candidate feature transaction table */
+        input = fileToPath("test.txt");
+	output = null;   // No text file output is requested
+
 		
-	double minsup = 3/((double)sentences.size()); // means a minsup of 2 transaction (we used a relative support)
-        System.out.println("Minsup: "+minsup);
+	double minsup = freqThreshold/((double)sentenceCount); // means a minsup of 2 transaction (we used a relative support)
 		
-	// Applying the Apriori algorithm
+	/* Applying the Apriori algorithm */
 	AlgoApriori algorithm = new AlgoApriori();
 		
-	// Uncomment the following line to set the maximum pattern length (number of items per itemset, e.g. 3 )
+	/* Uncomment the following line to set the maximum pattern length (number of items per itemset, e.g. 3 ) */
         //apriori.setMaximumPatternLength(3);
 		
 	Itemsets result = null;
                 
-        result = algorithm.runAlgorithm(minsup, input_n, output);
+        result = algorithm.runAlgorithm(minsup, input, output);
 
-        algorithm.printStats();
+        /* Uncomment to see the Apriori algorith stats */
+        //algorithm.printStats();
         
         List<List<Itemset>> transTableLevels = result.getLevels();
         
                 
 	//result.printItemsets(algorithm.getDatabaseSize());
         
-        /* Printing the features found by Apriori algorithm */
+        /* Printing the real features found by Apriori algorithm according to min support */
         System.out.println("---------Extracted features--------");
         for (List<Itemset> level : result.getLevels()) {
             if (!level.isEmpty()) {
@@ -161,16 +202,19 @@ public class Task1 {
                 }
             }
         } 
-        
-        
+
     }
     
+     
+    
+    /* Gets root directory of the project to save text file */
     public static String fileToPath(String filename) throws UnsupportedEncodingException{
 	System.out.println("filename : " + filename);
 	URL url = Task1.class.getResource(filename);
 	return java.net.URLDecoder.decode(url.getPath(),"UTF-8");
     }
     
+    /* Gets keys (features) from the id of the feature in the feature-id HashMap */
     public static Object getKeyFromValue(HashMap hm, Integer value) {
         for (Object o : hm.keySet()) {
             if (hm.get(o).equals(value)) {
