@@ -52,11 +52,11 @@ public class Task1 {
         
         
         /* Example paragraph (Iphone review) */
-        input = "iPhone 7; simsiyah, siyah, gümüş, altın ve rose gold renk seçenekleriyle beraber geliyor. iPhone 7’nin görünümü iPhone 6 ile neredeyse aynı olduğu için, renk seçeneklerinin önemi oldukça büyük. Apple’ın da lansmanda simsiyah iPhone 7’yi öne çıkarmasının sebebi de bu. \n" +
+        input = "iPhone 7; simsiyah, siyah, gümüş, altın ve rose gold renk seçenekleriyle beraber geliyor. Ön kamera çok hoşuma gitti. iPhone 7’nin görünümü iPhone 6 ile neredeyse aynı olduğu için, renk seçeneklerinin önemi oldukça büyük. Apple’ın da lansmanda simsiyah iPhone 7’yi öne çıkarmasının sebebi de bu. \n" +
 "\n" +
-"iPhone 7 alacak olan kullanıcılar genellikle telefonlarının iPhone 6 ailesinden farklılaşmasını istiyor. Bu yüzden renk seçimlerinde ibre simsiyah ve siyah modellerine kaymış durumda. Simsiyah modelinin çizilmelere karşı daha hassas olacağını da hatırlatalım. iPhone 7’nin kasasında gözle görülen en büyük farklılık arka anten çizgileri. Yatay olarak kasanın altından ve üstünden geçen iki çizgi artık iPhone 7’de yok. Apple burada sadece bir çizgiyi kaldırmanın dışında, tasarımsal olarak fazla bir dokunuş yapmamış. \n" +
+"iPhone 7 alacak olan kullanıcılar genellikle telefonlarının iPhone 6 ailesinden farklılaşmasını istiyor. Ön kamera berbatmış. Bu yüzden renk seçimlerinde ibre simsiyah ve siyah modellerine kaymış durumda. Simsiyah modelinin çizilmelere karşı daha hassas olacağını da hatırlatalım. iPhone 7’nin kasasında gözle görülen en büyük farklılık arka anten çizgileri. Yatay olarak kasanın altından ve üstünden geçen iki çizgi artık iPhone 7’de yok. Apple burada sadece bir çizgiyi kaldırmanın dışında, tasarımsal olarak fazla bir dokunuş yapmamış. \n" +
 "\n" +
-"Kasada karşımıza çıkan ikinci farklılık ise kamera tarafında. Gelişen kamera artık daha büyük, OIS desteği sayesinde çıkıntısı da biraz daha fazla.\n" +
+"Kasada karşımıza çıkan ikinci farklılık ise kamera tarafında. Ön kamera güzelmiş. Gelişen kamera artık daha büyük, OIS desteği sayesinde çıkıntısı da biraz daha fazla.\n" +
 "\n" +
 "Arka tarafta yer alan iPhone yazısının altında artık CE, FCC gibi onay sertifikalarının görünmemesi de 6 modellerine göre bir fark olarak yer alıyor.\n" +
 "\n" +
@@ -84,6 +84,24 @@ public class Task1 {
         
     }
     
+    /* This method returns the SingleAnalysis result for the word which is noun */
+    public static SingleAnalysis isNoun(WordAnalysis analysis){
+        int i = 0;
+        List <SingleAnalysis> result = analysis.getAnalysisResults();
+         
+        while(i< result.size() && result.get(i).getPos().shortForm.compareTo("Noun")!=0){
+            i += 1;
+        }
+        
+        if(i<result.size()){
+            return result.get(i);
+        }else{
+            return null;
+        }
+   
+    }
+    
+    
     /* Gets root directory of the project to save text file. Takes the target paragraph (text) as parameter */
     public static int extractCandidateFeatures(String input, HashMap<String, Integer> possibleFeatureIndexMap) throws UnsupportedEncodingException, FileNotFoundException {
         
@@ -100,7 +118,7 @@ public class Task1 {
         
         
         
-        
+        System.out.println(morphology.analyze("Güç").getAnalysisResults().get(2));
        /* Initializing the text file writer */
         out = new PrintWriter(fileToPath("test.txt"));
         
@@ -118,14 +136,14 @@ public class Task1 {
             for (Token token : tokens) {
                 
                 results =  morphology.analyze(token.getText());                              
-                
+
                 /* This control is required due to empty analysis result */
                 if( !results.getAnalysisResults().isEmpty() ) {
                     
-                    sa = results.getAnalysisResults().get(0);
-                    
+                    //sa = results.getAnalysisResults().get(0);
+                    sa = isNoun(results);
                     /* Checking if the initial word of the sentence is noun or not */
-                    if (sa.getPos().shortForm.compareTo("Noun") == 0) {
+                    if (sa != null) {
                         
                         /* If the initial candidate feature is already found, then its id (index) is given to the Apriori algo */
                         if (possibleFeatureIndexMap.containsKey(sa.getStem())) {
