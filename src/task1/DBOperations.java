@@ -12,6 +12,11 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCursor;
+import java.util.ArrayList;
+import java.util.Iterator;
+import javax.swing.text.Document;
 
 /**
  *
@@ -112,6 +117,28 @@ public class DBOperations {
         }
     }
     
+    /*  Fetches all texts from the initial collection documents */
+    public void getAllTexts(ArrayList<String> allText) {
+        
+        if(!this.isClosed) {                     
+            /* Performing a read operation on the collection. */
+            DBCursor cursor = this.collection.find();
+                    
+            try {
+                while(cursor.hasNext()) {
+                    allText.add((String) cursor.next().get("content"));
+
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+        else {
+            System.err.println("Firstly you have to create connection!!!");  
+        }
+
+    }
+    
     // The below side is written to test the operation of the database
     public static void main(String [] args){
 
@@ -135,10 +162,10 @@ public class DBOperations {
 
         DBOperations operation = new DBOperations();
         operation.startConnection("ProjectDB", "Texts");
-        operation.insert(new BasicDBObject("id","0").append("user","Deneme").append("content",input));
+        operation.insert(new BasicDBObject("id","1").append("user","Deneme2").append("content",input));
         operation.find(new BasicDBObject("id","0"));
-        operation.setDBandCollection("ProjectDB", "Opinions");
-        operation.insert(new BasicDBObject("idRef","0").append("feature","ön kamera").append("positive","5").append("negative","2"));
+        operation.setDBandCollection("ProjectDB", "Features");
+        operation.insert(new BasicDBObject("idRef","0").append("name","ön kamera").append("positiveCnt","5").append("negativeCnt","2"));
         operation.find(new BasicDBObject("idRef","0"));
         operation.closeConnection();
     }

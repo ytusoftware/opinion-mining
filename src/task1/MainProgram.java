@@ -13,6 +13,7 @@ import zemberek.tokenization.Token;
 import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
 import ca.pfv.spmf.algorithms.frequentpatterns.apriori.AlgoApriori;
+import ca.pfv.spmf.algorithms.frequentpatterns.fpgrowth.AlgoFPGrowth;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_count.Itemset;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_count.Itemsets;
 import java.io.FileNotFoundException;
@@ -25,19 +26,24 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import zemberek.morphology.analysis.SingleAnalysis;
+import java.nio.charset.StandardCharsets; 
+import java.nio.file.*; 
+import java.util.Collections;
 
 
 /**
  *
  * @author cetintekin
  */
-public class Task1 {
+public class MainProgram {
 
     /**
      * @param args the command line arguments
+     * @throws java.io.UnsupportedEncodingException
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
@@ -46,7 +52,7 @@ public class Task1 {
         int frequencyThreshold;                                                    /* The minimum frequency value which will be used for determining frequent nouns. Example values: 2,3,4 ..  */
         String input;                                                              /* Holds the paragraph text */
         int sentenceCount;                                                         /* Total number of sentences extracted from paragraph */
-        HashMap<String, Integer> possibleFeatureIndexMap = new HashMap<>();        /* Holds candidate features and their ids (ids are used for Apriori algorithm) */
+        HashMap<String, Integer> possibleFeatureIndexMap = new HashMap<>();        /* Holds mapping of candidate features to their ids (ids are used for Apriori algorithm). */
         
                       
         
@@ -75,7 +81,8 @@ public class Task1 {
         frequencyThreshold = 3;
      
         
-        /* Extracting all candidate features from text (Looking at the nouns) */
+        /* Extracting all candidate features from texts in the MongoDB and mapping those names to the numerical values to get Apriori algorithm work. */
+        /* Apriori algorithm in the SPMF lib accepts input only in the form of a text file which includes comma seperated numerical values as the Transaction Table. */
         sentenceCount = extractCandidateFeatures(input, possibleFeatureIndexMap);
         
         /* After extracting the candidate features, real features are found by using Apriori algorithm */
@@ -103,7 +110,7 @@ public class Task1 {
     
     
     /* Gets root directory of the project to save text file. Takes the target paragraph (text) as parameter */
-    public static int extractCandidateFeatures(String input, HashMap<String, Integer> possibleFeatureIndexMap) throws UnsupportedEncodingException, FileNotFoundException {
+    public static int extractCandidateFeatures(String input, HashMap<String, Integer> possibleFeatureIndexMap) throws UnsupportedEncodingException, FileNotFoundException, IOException {
         
         TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;     /* Sentence extractor from paragraph */
         TurkishTokenizer tokenizer = TurkishTokenizer.DEFAULT;                     /* Word extractor from sentence */
@@ -113,62 +120,99 @@ public class Task1 {
         List<Token> tokens;                                                        /* Holds words extracted from sentence */
         WordAnalysis results;                                                      /* Used for holding the result of Turkish morphological analysis */
         int generalFeatureIndex;                                                   /* Used for labeling the candidate features for the use of Apriori algo. work */
-        int initialFeatureIndex;                                                   /* Holds the last given highest id to the candidate features */
+        //int initialFeatureIndex;                                                   /* Holds the last given highest id to the candidate features */
         SingleAnalysis sa;
+        PriorityQueue<Integer> minHeap = new PriorityQueue<Integer>();             /* This min heap tree is used for getting the candidate feature ids in the increasing order */
+        ArrayList<String> allTexts = new ArrayList<>();                            /* Used for storing the all texts */
+        HashSet <String> transactionRowTracker = new HashSet<>();                  /* This map will not give permition to second time occurence of a feature in a Transaction row */
+        int sentenceCnt;
+        List<String> stopWords;                                                    /* This list includes turkish stop words */
         
         
         
-        System.out.println(morphology.analyze("Güç").getAnalysisResults().get(2));
+        
+        //System.out.println(morphology.analyze("Güç").getAnalysisResults().get(2));
+        
        /* Initializing the text file writer */
         out = new PrintWriter(fileToPath("test.txt"));
         
-        /* Sentences are extracted from paragraph */
-        sentences = extractor.fromParagraph(input);
+        Collections.emptyList(); 
+        stopWords = Files.readAllLines(Paths.get("stopwords.txt"), StandardCharsets.UTF_8);
 
+        
+        sentenceCnt = 0;
+        
+        /* Opening DB connection and getting the texts */
+        DBOperations operation = new DBOperations();
+        operation.startConnection("ProjectDB", "Texts");
+        operation.getAllTexts(allTexts);
+        
         
         generalFeatureIndex = 1;
         
         /* All sentences in the paragraph are traversed respectively. */
-        for (String sentence : sentences) {
-            tokens = tokenizer.tokenize(sentence);
+        for (String text : allTexts) {
             
-            /* Halihazirda tokenize edilmis cumlenin kelime bilgileri ekrana basiliyor */
-            for (Token token : tokens) {
+            sentences = extractor.fromParagraph(text);
+            sentenceCnt += sentences.size();
+            for (String sentence : sentences) {        
                 
-                results =  morphology.analyze(token.getText());                              
+                tokens = tokenizer.tokenize(sentence);
 
-                /* This control is required due to empty analysis result */
-                if( !results.getAnalysisResults().isEmpty() ) {
+                /* All words in the text is traversed */
+                for (Token token : tokens) {
                     
-                    //sa = results.getAnalysisResults().get(0);
-                    sa = isNoun(results);
-                    /* Checking if the initial word of the sentence is noun or not */
-                    if (sa != null) {
+                    if (!stopWords.contains(token.getText())) {                       
                         
-                        /* If the initial candidate feature is already found, then its id (index) is given to the Apriori algo */
-                        if (possibleFeatureIndexMap.containsKey(sa.getStem())) {
-                            initialFeatureIndex = possibleFeatureIndexMap.get(sa.getStem());
-                        }
-                        /* Otherwise, a new id is given to the initial candidate feature */
-                        else {
-                            initialFeatureIndex = generalFeatureIndex;
-                            generalFeatureIndex++;
-                            possibleFeatureIndexMap.put(sa.getStem(), initialFeatureIndex);
-                        }
+                        results =  morphology.analyze(token.getText());                        
 
-                        /* Then, adding the list index of possible feature to the transaction table of Apriori algorithm. (The library of Apriori algo. takes input from text file as integer values) */
-                        out.print(initialFeatureIndex);
-                        out.print(' ');
+                        /* This control is required due to empty analysis result */
+                        if( !results.getAnalysisResults().isEmpty() ) {
+
+                            //sa = results.getAnalysisResults().get(0);
+                            sa = isNoun(results);
+                            /* Checking if the initial word of the sentence is noun or not */
+                            if (sa != null) {
+
+                                /* If the initial candidate feature is already found, then its id (index) is given to the Apriori algo */
+                                if (!possibleFeatureIndexMap.containsKey(sa.getStem())) {                           
+                                    /* Firstly, the candidate feature is added to the general feature-id map */
+                                    possibleFeatureIndexMap.put(sa.getStem(), generalFeatureIndex++);
+
+                                }
+
+                                /* Checking if this candidate feature is appeared twice in this transaction row (text) */
+                                if (!transactionRowTracker.contains(sa.getStem())) {
+                                    /* Then, adding the id of the candidate feature to the min heap tree to give Apriori algorithm later */
+                                    minHeap.add(possibleFeatureIndexMap.get(sa.getStem()));
+                                    /* And, adding string to the tracker list */
+                                    transactionRowTracker.add(sa.getStem());
+
+                                }    
+
+                            }
+
+                        } 
+
+                        
                     }
-                    
-                }          
-                        
-            }
-            out.println();
+
+
+                }
+                /* Writing features numerical values to the Apriori algo. input text file */
+                writeHeapTree(minHeap, out);
+                /* Cleaning transaction row tracker due to passing to the new transaction row */
+                transactionRowTracker.clear();
+            
+            }      
+                
         }
-        out.close();
         
-        return sentences.size();
+        out.close();
+        operation.closeConnection();
+                                  
+        
+        return sentenceCnt;
     }
     
    
@@ -190,14 +234,14 @@ public class Task1 {
 	double minsup = freqThreshold/((double)sentenceCount); // means a minsup of 2 transaction (we used a relative support)
 		
 	/* Applying the Apriori algorithm */
-	AlgoApriori algorithm = new AlgoApriori();
+	AlgoFPGrowth algorithm = new AlgoFPGrowth();
 		
 	/* Uncomment the following line to set the maximum pattern length (number of items per itemset, e.g. 3 ) */
         //apriori.setMaximumPatternLength(3);
 		
 	Itemsets result = null;
                 
-        result = algorithm.runAlgorithm(minsup, input, output);
+        result = algorithm.runAlgorithm(input, output, minsup);
 
         /* Uncomment to see the Apriori algorith stats */
         //algorithm.printStats();
@@ -228,7 +272,7 @@ public class Task1 {
     /* Gets root directory of the project to save text file */
     public static String fileToPath(String filename) throws UnsupportedEncodingException{
 	System.out.println("filename : " + filename);
-	URL url = Task1.class.getResource(filename);
+	URL url = MainProgram.class.getResource(filename);
 	return java.net.URLDecoder.decode(url.getPath(),"UTF-8");
     }
     
@@ -240,6 +284,18 @@ public class Task1 {
             }
         }
         return null;
+    }
+    
+    /* Writes min heap tree elements to the Apriori algorithm input text file. (min heap tree is used for cumulatively storing numerical ids of features in the increasing order) */ 
+    public static void writeHeapTree(PriorityQueue<Integer> minHeap, PrintWriter out) {
+        Integer id;
+        
+        while( (id=minHeap.poll()) != null ) {
+            out.print(id);
+            out.print(' ');
+        }    
+        out.println();       
+        
     }
     
 }
