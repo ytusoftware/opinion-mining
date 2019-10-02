@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package task1;
+package com.opmining;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -117,7 +117,7 @@ public class DBOperations {
         }
     }
     
-    /*  Fetches all texts from the initial collection documents */
+    /*  Fetches all texts from the initial collection's documents */
     public void getAllTexts(ArrayList<String> allText) {
         
         if(!this.isClosed) {                     
@@ -138,37 +138,23 @@ public class DBOperations {
         }
 
     }
-    
+    /*
     // The below side is written to test the operation of the database
     public static void main(String [] args){
 
-        String  input = "iPhone 7; simsiyah, siyah, gümüş, altın ve rose gold renk seçenekleriyle beraber geliyor. Ön kamera çok hoşuma gitti. iPhone 7’nin görünümü iPhone 6 ile neredeyse aynı olduğu için, renk seçeneklerinin önemi oldukça büyük. Apple’ın da lansmanda simsiyah iPhone 7’yi öne çıkarmasının sebebi de bu. \n" +
+        String  input =  "Her yıl yeni işlemcisini de tanıtan Apple, en yeni iPhone modellerinde en güncel işlemcisini kullanmaya devam ediyor. Apple iPhone 11 de gücünü A13 Bionic’ten alıyor. 6 çekirdekli işlemcinin çekirdekleri 2.66 GHz hızında çalışıyor. A12 Bionic’e göre yüzde 20 daha fazla performans sunan bu işlemci ayrıca yüzde 40 daha enerji tasarrufuna sahip. İşlemci üçüncü nesil Neural Engine ile geliyor.\n" +
 "\n" +
-"iPhone 7 alacak olan kullanıcılar genellikle telefonlarının iPhone 6 ailesinden farklılaşmasını istiyor. Ön kamera berbatmış. Bu yüzden renk seçimlerinde ibre simsiyah ve siyah modellerine kaymış durumda. Simsiyah modelinin çizilmelere karşı daha hassas olacağını da hatırlatalım. iPhone 7’nin kasasında gözle görülen en büyük farklılık arka anten çizgileri. Yatay olarak kasanın altından ve üstünden geçen iki çizgi artık iPhone 7’de yok. Apple burada sadece bir çizgiyi kaldırmanın dışında, tasarımsal olarak fazla bir dokunuş yapmamış. \n" +
-"\n" +
-"Kasada karşımıza çıkan ikinci farklılık ise kamera tarafında. Ön kamera güzelmiş. Gelişen kamera artık daha büyük, OIS desteği sayesinde çıkıntısı da biraz daha fazla.\n" +
-"\n" +
-"Arka tarafta yer alan iPhone yazısının altında artık CE, FCC gibi onay sertifikalarının görünmemesi de 6 modellerine göre bir fark olarak yer alıyor.\n" +
-"\n" +
-"Telefonun alt tarafına indiğimizde de artık 3.5mm’lik jack girişinin olmadığını görüyoruz. Lightning portunun sol tarafında bulunan jack girişi yerine artık sağ taraftaki hoparlör ızgaralarının sol tarafta da devam ettiğini görüyoruz.\n" +
-"\n" +
-"iPhone 7’de, iPhone 6’ya göre ön tarafta göze batan hiç bir görsel farklılık bulunmuyor. Sadece fark, artık home butonunun fiziksel yani mekanik olmaması.\n" +
-"\n" +
-"Haptic Engine ile beraber 3 farklı titreşim seviyesiyle bizlere geri bildirim veren yeni dijital home butonu, deneyim açısından fiziksel butonu aratıyor diyemeyiz.  Yeni buton ayrıca artık baskı şiddetini de algılıyor. İleride yeni yazılımlarında baskı şiddetine göre ek fonksiyonlar sunacağını söylersek yanılmayız.\n" +
-"\n" +
-"138.3 x 67.1 x 7.1 mm ölçüleriyle iPhone 6 modelleriyle aynı olan iPhone 7, çoğu eski kılıfla da uyumlu olacak. iPhone 6s’e göre sadece 5 gram daha hafifleyen iPhone 7, tasarım anlamında ayrıca oldukça önemli bir geliştirmeye de sahip.\n" +
-"\n" +
-"IP67 sertifikasını destekleyen iPhone 7, artık suya karşı dayanıklı. Apple’ın suya karşı garanti vermediğinin altını çizelim. Garanti verilmese de IP67 sertifikası sayesinde 1 metre derinliğinde yarım saate kadar suya dayandığının, herhangi bir aksilik durumunda garantiye girmeyeceğini tekrar vurgulayalım."; 
+"RAM ve depolama alanı tarafın baktığımızda, telefonun 64 GB, 128 GB ve 256 GB olmak üzere üç farklı depolama alanı alternatifi olduğunu görüyoruz. Apple, telefonlarında kullandığı RAM’i açıklamıyor. Ancak, ortaya çıkan testler bize telefonda 4 GB RAM kullanıldığını gösteriyor. iPhone XR modelinde 3 GB RAM’in kullanıldığını da belirtelim.";
 
         DBOperations operation = new DBOperations();
         operation.startConnection("ProjectDB", "Texts");
-        operation.insert(new BasicDBObject("id","1").append("user","Deneme2").append("content",input));
-        operation.find(new BasicDBObject("id","0"));
-        operation.setDBandCollection("ProjectDB", "Features");
-        operation.insert(new BasicDBObject("idRef","0").append("name","ön kamera").append("positiveCnt","5").append("negativeCnt","2"));
-        operation.find(new BasicDBObject("idRef","0"));
+        operation.insert(new BasicDBObject("id","4").append("user","Deneme3").append("content",input));
+        //operation.find(new BasicDBObject("id","0"));
+        //operation.setDBandCollection("ProjectDB", "Features");
+        //operation.insert(new BasicDBObject("idRef","0").append("name","ön kamera").append("positiveCnt","5").append("negativeCnt","2"));
+        //operation.find(new BasicDBObject("idRef","0"));
         operation.closeConnection();
     }
     
-    
+    */
 }
