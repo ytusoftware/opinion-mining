@@ -12,10 +12,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,6 +30,9 @@ import zemberek.tokenization.TurkishTokenizer;
 /**
  *
  * @author cetintekin
+ * 
+ * 
+ * This class is responsible for extracting features from the JSON objects in MongoDB and related tasks.
  */
 public class FeatureExtraction {
     
@@ -207,7 +208,7 @@ public class FeatureExtraction {
                     if (!stopWords.contains(token.getText())) {                       
                         
                         /* Stemming the single word.. */
-                        results =  morphology.analyze(token.getText());                        
+                        results =  morphology.analyze(token.getText());   
 
                         /* This control is required due to empty analysis result */
                         if( !results.getAnalysisResults().isEmpty() ) {
