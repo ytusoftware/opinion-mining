@@ -5,22 +5,17 @@
  */
 package com.opmining;
 
-import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCursor;
 import java.util.ArrayList;
-import java.util.Iterator;
-import javax.swing.text.Document;
 
 /**
  *
- * @author USER
+ * @author Hakan Yuksek
  */
 public class DBOperations {
     
