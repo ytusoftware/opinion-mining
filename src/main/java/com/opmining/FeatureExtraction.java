@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
 import zemberek.morphology.TurkishMorphology;
@@ -40,14 +41,15 @@ public class FeatureExtraction {
     private Itemsets result;                                       /* Holds SPMF Apriori Algo. results (itemsets) */                           
     private HashMap<String, Integer> possibleFeatureIndexMap;      /* Holds mapping of candidate features to their ids (ids are used for Apriori algorithm). */
     private int frequencyThreshold;                                /* Holds the frequency threshold for Apriori itemset generation (Default = 3) */
+    private ArrayList<String> allTexts;                            /* Holds all texts read from MongoDB */
     
     
     
-    public FeatureExtraction() {
+    public FeatureExtraction(ArrayList<String> allTextsFromDB) {
         
         this.possibleFeatureIndexMap = new HashMap<>();
         this.frequencyThreshold = 6;
-                
+        this.allTexts = allTextsFromDB;                
         
     }
     
@@ -142,6 +144,30 @@ public class FeatureExtraction {
 
     }
     
+    /* Returns extracted device features as hash set */
+    public HashSet<String> getAprioriFeaturesAsSet() { 
+        
+        String feature;
+        HashSet<String> featureSet = new HashSet<>();
+        
+        
+        /* Printing the real features found by Apriori algorithm according to min support */
+        System.out.println("---------Extracted features--------");
+        for (List<Itemset> level : result.getLevels()) {
+            if (!level.isEmpty()) {
+                for (Itemset itemset : level) {
+                    feature = (String) getKeyFromValue(possibleFeatureIndexMap, itemset.get(0));
+                    /* If length two feature */
+                    if (itemset.size() > 1) {
+                        feature = feature + " " + (String) getKeyFromValue(possibleFeatureIndexMap, itemset.get(1));
+                    }
+                    featureSet.add(feature);
+                }
+            }
+        } 
+        return featureSet;
+    }
+    
     
     
     /* 
@@ -163,7 +189,6 @@ public class FeatureExtraction {
         int generalFeatureIndex;                                                   /* Used for labeling the candidate features for the use of Apriori algo. work */
         SingleAnalysis sa;
         PriorityQueue<Integer> minHeap = new PriorityQueue<>();                    /* This min heap tree is used for getting the candidate feature ids in the increasing order */
-        ArrayList<String> allTexts = new ArrayList<>();                            /* Used for storing the all texts */
         int sentenceCnt;
         List<String> stopWords;                                                    /* This list includes turkish stop words */
         int aprioriId;
@@ -179,11 +204,6 @@ public class FeatureExtraction {
         Collections.emptyList();
         stopWords = Files.readAllLines(Paths.get("stopwords.txt"), StandardCharsets.UTF_8);
 
-        
-        /* Opening DB connection and getting the texts */
-        DBOperations operation = new DBOperations();
-        operation.startConnection("ProjectDB", "Texts");
-        operation.getAllTexts(allTexts);
         
         
         sentenceCnt = 0;
@@ -251,7 +271,6 @@ public class FeatureExtraction {
         }
         
         out.close();
-        operation.closeConnection();
         
         return sentenceCnt;
 
@@ -283,7 +302,7 @@ public class FeatureExtraction {
 	AlgoFPGrowth algorithm = new AlgoFPGrowth();
 		
 	/* Uncomment the following line to set the maximum pattern length (number of items per itemset, e.g. 3 ) */
-        //apriori.setMaximumPatternLength(3);
+        algorithm.setMaximumPatternLength(2);
 		
 	//Itemsets result = null;
                 
