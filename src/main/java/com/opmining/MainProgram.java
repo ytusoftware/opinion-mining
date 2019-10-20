@@ -9,6 +9,8 @@ package com.opmining;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 
 /**
@@ -24,19 +26,35 @@ public class MainProgram {
      */
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         
-        //FeatureExtraction extractor = new FeatureExtraction();
-        
-        //extractor.setFrequencyThreshold(5);
-        //extractor.extractAprioriFeatures();  // Default freq threshold percentage is 6. (see setFrequencyThreshold() method)    
-        //extractor.printAprioriFeatures();
-        
         ArrayList<String> allTexts = new ArrayList<>();
-        OpinionMining om = new OpinionMining();
-        int i = 1;
+        HashSet<String> deviceFeatures = new HashSet<>();
+        HashMap<String, ArrayList<Integer>> omResults = new HashMap<>();
         
+        /* Reading all paragraphs */
         DBOperations op = new DBOperations();
         op.startConnection("ProjectDB", "Texts");
         op.getAllTexts(allTexts);
+
+        /* Extracting features */
+        FeatureExtraction extractor = new FeatureExtraction(allTexts);
+        extractor.setFrequencyThreshold(3);
+        extractor.extractAprioriFeatures();
+        deviceFeatures = extractor.getAprioriFeaturesAsSet();
+        
+        extractor.printAprioriFeatures();
+        
+        /* Opinion Mining */
+        OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
+        omResults = om.startOpinionMining();
+        System.out.println(omResults);
+        
+       
+        
+        
+        /*StatExtraction om = new StatExtraction();
+        int i = 1;
+        
+
        
         for (String allText : allTexts) {
             om.setText(allText);
@@ -51,10 +69,10 @@ public class MainProgram {
             System.err.println();
             
             i++;
-        }
+        }*/
         
-              
-        
+       
+                        
     }
           
 }
