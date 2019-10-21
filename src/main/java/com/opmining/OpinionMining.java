@@ -14,10 +14,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import zemberek.morphology.TurkishMorphology;
 import zemberek.morphology.analysis.WordAnalysis;
 import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
+import org.json.JSONObject;
+
 
 /**
  *
@@ -203,10 +206,29 @@ public class OpinionMining {
                 aspectBasedResults.get(deviceFeature).set(1, prevGeneralScore+1);
             }
             
+        }     
+        
+    }
+    
+    
+    /* Returns opinion mining results as JSON string. */
+    public String getResultsAsJSON() {
+        
+        JSONObject totalJsonReportObj= new JSONObject();
+        JSONObject singleJsonReportObj;
+        String key;
+        
+        for (String aspect : aspectBasedResults.keySet()) {
+            
+            singleJsonReportObj= new JSONObject()
+                                 .put("positiveCnt", aspectBasedResults.get(aspect).get(0))
+                                 .put("negativeCnt", aspectBasedResults.get(aspect).get(1));
+                                         
+            totalJsonReportObj.put(aspect,singleJsonReportObj);
+
         }
-       
         
-        
+        return totalJsonReportObj.toString();
     }
     
     

@@ -46,7 +46,7 @@ public class MainProgram {
         /* Opinion Mining */
         OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
         omResults = om.startOpinionMining();
-        System.out.println(omResults);
+        System.out.println(om.getResultsAsJSON());
         
        
         
