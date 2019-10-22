@@ -29,6 +29,11 @@
             <version>0.17.1</version>
         </dependency>
         <dependency>
+            <groupId>zemberek-nlp</groupId>
+            <artifactId>zemberek-normalization</artifactId>
+            <version>0.17.1</version>
+        </dependency>
+        <dependency>
             <groupId>spid</groupId>
             <artifactId>spart</artifactId>
             <version>1.0</version>

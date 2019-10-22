@@ -32,7 +32,7 @@ public class MainProgram {
         
         /* Reading all paragraphs */
         DBOperations op = new DBOperations();
-        op.startConnection("ProjectDB", "Texts");
+        op.startConnection("ProjectDB", "Texts2");
         op.getAllTexts(allTexts);
 
         /* Extracting features */

@@ -110,7 +110,7 @@ public class OpinionMining {
                     adjacentWord = sentence.get(i+1);
                     
                     /* Checking if the combination form an aspect length two */
-                    if (deviceFeatures.contains(word+" "+adjacentWord)) {
+                    if (deviceFeatures.contains(word+" "+adjacentWord) || deviceFeatures.contains(adjacentWord+" "+word)  ) {
                         sentenceDeviceFeatures.put(word+" "+adjacentWord, i);
                         i++; // double increment to pass the adjacent word in the next iteration 
                        
