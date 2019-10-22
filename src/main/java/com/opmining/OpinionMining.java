@@ -35,6 +35,8 @@ public class OpinionMining {
     private HashSet<String> negativeOpinionWords;                       /* All negative opinion words */
     private ArrayList<String> allTextsFromDB;                           /* Holds all paragraphs read from MongoDB */
     private HashMap<String, ArrayList<Integer>> aspectBasedResults;     /* Holds aspect-based op mining results: {aspect:[posCnt, negCnt]} */
+    private TurkishMorphology morphology;                               /* Used for finding stems of words */
+    
     
     
     
@@ -64,16 +66,16 @@ public class OpinionMining {
     
     
     /* Transform word list supplied to method to their stems (kelime koku) */
+    /* TODO: Multithreaded yapilabilir */
     private void getStems(List<String> words, ArrayList<String> stemmedWords) {
         
         WordAnalysis results;                                                       /* Used for holding the result of Turkish morphological analysis */
-        TurkishMorphology morphology = TurkishMorphology.createWithDefaults();      /* Used for finding stems of words */
         
                 
         for (int i = 0; i < words.size(); i++) {
 
             /* Stemming the single word.. (kok bulunuyor) */
-            results =  morphology.analyze(words.get(i));       
+            results =  this.morphology.analyze(words.get(i));       
             
             if (!results.getAnalysisResults().isEmpty()) {
                 /* Getting the first of analysis results (the stem) and putting in the stemmed words list */
@@ -257,6 +259,10 @@ public class OpinionMining {
         sentenceOpinionWordsScores = new ArrayList<>();
         stemmedWords = new ArrayList<>();
         this.aspectBasedResults = new HashMap<>();
+        
+        
+        /* Initializing the Turkish morphology object */
+        this.morphology = TurkishMorphology.createWithDefaults();
         
         
         for (String paragraph : this.allTextsFromDB) {
