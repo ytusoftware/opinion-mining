@@ -433,7 +433,6 @@ sofistike
 duygulu
 köpüklü
 özel
-özel
 hızlı
 canlı
 manevi
@@ -494,7 +493,6 @@ canlı
 aranan
 sıcak
 çok yönlü
-kaprisli
 uyanık
 istekli
 şirin
@@ -505,7 +503,6 @@ dünyevi
 layık
 hasret
 gayretli
-gayet
 uygun
 bol
 harika
@@ -513,3 +510,4 @@ iyi
 yeterli
 başarı
 net
+Ergonomik
