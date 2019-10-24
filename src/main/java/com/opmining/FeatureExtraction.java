@@ -152,7 +152,6 @@ public class FeatureExtraction {
         
         
         /* Printing the real features found by Apriori algorithm according to min support */
-        System.out.println("---------Extracted features--------");
         for (List<Itemset> level : result.getLevels()) {
             if (!level.isEmpty()) {
                 for (Itemset itemset : level) {
@@ -190,7 +189,8 @@ public class FeatureExtraction {
         SingleAnalysis sa;
         PriorityQueue<Integer> minHeap = new PriorityQueue<>();                    /* This min heap tree is used for getting the candidate feature ids in the increasing order */
         int sentenceCnt;
-        List<String> stopWords;                                                    /* This list includes turkish stop words */
+        HashSet<String> stopWords;                                                 /* This list includes turkish stop words */
+        HashSet<String> opinionWords;                                              /* This list includes turkish positive words */
         int aprioriId;
         
        
@@ -200,11 +200,13 @@ public class FeatureExtraction {
         /* Initializing the text file writer (This file is used by SPMF lib's Apriopri algo later.) */
         out = new PrintWriter(fileToPath("aprioriInput.txt"));
         
-        /* Reading stop words from text file */
-        Collections.emptyList();
-        stopWords = Files.readAllLines(Paths.get("stopwords.txt"), StandardCharsets.UTF_8);
-
+        /* Reading stop words and opinion words from text file */
+        stopWords = new HashSet<>();
+        opinionWords = new HashSet<>();
         
+        stopWords.addAll(Files.readAllLines(Paths.get("stopwords.txt"), StandardCharsets.UTF_8));
+        opinionWords.addAll(Files.readAllLines(Paths.get("positive-words.txt"), StandardCharsets.UTF_8));
+        opinionWords.addAll(Files.readAllLines(Paths.get("negative-words.txt"), StandardCharsets.UTF_8));
         
         sentenceCnt = 0;
         generalFeatureIndex = 1;
@@ -225,7 +227,8 @@ public class FeatureExtraction {
                 /* All words in the text is traversed */
                 for (Token token : tokens) {
                     
-                    if (!stopWords.contains(token.getText())) {                       
+                    /* If the word is not stop word or opinion word */
+                    if ( (!stopWords.contains(token.getText())) && (!opinionWords.contains(token.getText())) ) {                       
                         
                         /* Stemming the single word.. */
                         results =  morphology.analyze(token.getText());   
@@ -288,7 +291,6 @@ public class FeatureExtraction {
         
         /* Extracting candidate features */
         sentenceCnt = this.extractCandidateFeatures();
-        System.out.println(sentenceCnt);
         
         
         /* Opening the candidate feature transaction table */

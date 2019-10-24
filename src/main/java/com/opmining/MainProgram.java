@@ -11,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import zemberek.morphology.TurkishMorphology;
 
 
 /**
@@ -32,12 +33,12 @@ public class MainProgram {
         
         /* Reading all paragraphs */
         DBOperations op = new DBOperations();
-        op.startConnection("ProjectDB", "Texts2");
+        op.startConnection("ProjectDB", "Texts");
         op.getAllTexts(allTexts);
 
         /* Extracting features */
         FeatureExtraction extractor = new FeatureExtraction(allTexts);
-        extractor.setFrequencyThreshold(3);
+        extractor.setFrequencyThreshold(2);
         extractor.extractAprioriFeatures();
         deviceFeatures = extractor.getAprioriFeaturesAsSet();
         
@@ -45,11 +46,11 @@ public class MainProgram {
         
         /* Opinion Mining */
         OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
-        omResults = om.startOpinionMining();
+        om.startOpinionMining();
+        //om.writeResultsToMongoDB();
         System.out.println(om.getResultsAsJSON());
         
        
-        
         
         /*StatExtraction om = new StatExtraction();
         int i = 1;
