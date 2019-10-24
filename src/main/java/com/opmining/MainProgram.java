@@ -32,26 +32,12 @@ public class MainProgram {
         
         /* Reading all paragraphs */
         DBOperations op = new DBOperations();
-        op.startConnection("ProjectDB", "Texts");
+        op.startConnection("ProjectDB", "Texts2");
         op.getAllTexts(allTexts);
-
-        /* Extracting features */
-        FeatureExtraction extractor = new FeatureExtraction(allTexts);
-        extractor.setFrequencyThreshold(3);
-        extractor.extractAprioriFeatures();
-        deviceFeatures = extractor.getAprioriFeaturesAsSet();
         
-        extractor.printAprioriFeatures();
+              
         
-        /* Opinion Mining */
-        OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
-        omResults = om.startOpinionMining();
-        System.out.println(omResults);
-        
-       
-        
-        
-        /*StatExtraction om = new StatExtraction();
+        StatExtraction om = new StatExtraction();
         int i = 1;
         
 
@@ -69,7 +55,7 @@ public class MainProgram {
             System.err.println();
             
             i++;
-        }*/
+        }
         
        
                         
