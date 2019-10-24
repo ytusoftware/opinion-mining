@@ -37,19 +37,6 @@ public class MainProgram {
         DBOperations op = new DBOperations();
         op.startConnection("ProjectDB", "Texts2");
 
-        /* Extracting features */
-        FeatureExtraction extractor = new FeatureExtraction(allTexts);
-        extractor.setFrequencyThreshold(3);
-        extractor.extractAprioriFeatures();
-        deviceFeatures = extractor.getAprioriFeaturesAsSet();
-
-        extractor.printAprioriFeatures();
-
-        /* Opinion Mining */
-        OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
-        omResults = om.startOpinionMining();
-        System.out.println(omResults);
-
 
 	// Extracting Statistical Information for each text in the Database
 	System.out.println("------------------------------------------------------");
