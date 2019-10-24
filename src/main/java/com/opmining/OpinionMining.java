@@ -5,6 +5,9 @@
  */
 package com.opmining;
 
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -20,6 +23,7 @@ import zemberek.morphology.analysis.WordAnalysis;
 import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
 import org.json.JSONObject;
+import com.mongodb.DBObject;
 
 
 /**
@@ -95,14 +99,16 @@ public class OpinionMining {
         
         int i;
         String word;                    /* Holds the initial word */
-        String adjacentWord;            /* Holds the neighbor word (one upper word) of the initial word */       
+        String adjacentWord;            /* Holds the neighbor word (one upper word) of the initial word */
+        boolean flag;
         
         
-      
+        
         i = 0;
         while (i < sentence.size() ) {
             
             word = sentence.get(i);
+            flag = false;
             
             /* Checking if the initial word is length one aspect or not */
             if (deviceFeatures.contains(word)) {
@@ -114,12 +120,13 @@ public class OpinionMining {
                     /* Checking if the combination form an aspect length two */
                     if (deviceFeatures.contains(word+" "+adjacentWord) || deviceFeatures.contains(adjacentWord+" "+word)  ) {
                         sentenceDeviceFeatures.put(word+" "+adjacentWord, i);
-                        i++; // double increment to pass the adjacent word in the next iteration 
+                        i++; // double increment to pass the adjacent word in the next iteration
+                        flag = true;
                        
                     }
                 }
                 /* If no adjacent word then add just the single word */
-                else {
+                if(!flag) {
                    sentenceDeviceFeatures.put(word, i);
                 }
             }
@@ -234,8 +241,32 @@ public class OpinionMining {
     }
     
     
+    /* Writes opinion mining results to MongoDB */
+    public void writeResultsToMongoDB() {
+        
+        DBOperations op;
+        BasicDBObject reportObj;
+        BasicDBList list;
+        
+        op = new DBOperations();
+        op.startConnection("ProjectDB", "OpinionMiningResults");
+        reportObj = new BasicDBObject();
+        
+        
+        for (String aspect : aspectBasedResults.keySet()) {
+            
+            reportObj.append(aspect, new BasicDBObject("positiveOpinionCnt",aspectBasedResults.get(aspect).get(0))
+                                    .append("negativeOpinionCnt", aspectBasedResults.get(aspect).get(1)) );
+        }       
+        
+        op.insert(reportObj);
+        op.closeConnection();
+                
+    }
+    
+    
     /* Starts opinion mining on texts in the allTextsFromDB */
-    public HashMap<String, ArrayList<Integer>> startOpinionMining() throws IOException {
+    public void startOpinionMining() throws IOException {
         
         TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;     /* Sentence extractor from paragraph */
         TurkishTokenizer tokenizer = TurkishTokenizer.DEFAULT;                     /* Word extractor from sentence */
@@ -293,7 +324,6 @@ public class OpinionMining {
             
         }
         
-        return this.aspectBasedResults;
         
     }
     
