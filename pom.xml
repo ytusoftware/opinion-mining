@@ -29,6 +29,11 @@
             <version>0.17.1</version>
         </dependency>
         <dependency>
+            <groupId>zemberek-nlp</groupId>
+            <artifactId>zemberek-normalization</artifactId>
+            <version>0.17.1</version>
+        </dependency>
+        <dependency>
             <groupId>spid</groupId>
             <artifactId>spart</artifactId>
             <version>1.0</version>
@@ -37,6 +42,11 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-java</artifactId>
             <version>1.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20190722</version>
         </dependency>
     </dependencies>
 </project>

@@ -14,10 +14,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import zemberek.morphology.TurkishMorphology;
 import zemberek.morphology.analysis.WordAnalysis;
 import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
+import org.json.JSONObject;
+
 
 /**
  *
@@ -32,6 +35,8 @@ public class OpinionMining {
     private HashSet<String> negativeOpinionWords;                       /* All negative opinion words */
     private ArrayList<String> allTextsFromDB;                           /* Holds all paragraphs read from MongoDB */
     private HashMap<String, ArrayList<Integer>> aspectBasedResults;     /* Holds aspect-based op mining results: {aspect:[posCnt, negCnt]} */
+    private TurkishMorphology morphology;                               /* Used for finding stems of words */
+    
     
     
     
@@ -61,16 +66,16 @@ public class OpinionMining {
     
     
     /* Transform word list supplied to method to their stems (kelime koku) */
+    /* TODO: Multithreaded yapilabilir */
     private void getStems(List<String> words, ArrayList<String> stemmedWords) {
         
         WordAnalysis results;                                                       /* Used for holding the result of Turkish morphological analysis */
-        TurkishMorphology morphology = TurkishMorphology.createWithDefaults();      /* Used for finding stems of words */
         
                 
         for (int i = 0; i < words.size(); i++) {
 
             /* Stemming the single word.. (kok bulunuyor) */
-            results =  morphology.analyze(words.get(i));       
+            results =  this.morphology.analyze(words.get(i));       
             
             if (!results.getAnalysisResults().isEmpty()) {
                 /* Getting the first of analysis results (the stem) and putting in the stemmed words list */
@@ -107,7 +112,7 @@ public class OpinionMining {
                     adjacentWord = sentence.get(i+1);
                     
                     /* Checking if the combination form an aspect length two */
-                    if (deviceFeatures.contains(word+" "+adjacentWord)) {
+                    if (deviceFeatures.contains(word+" "+adjacentWord) || deviceFeatures.contains(adjacentWord+" "+word)  ) {
                         sentenceDeviceFeatures.put(word+" "+adjacentWord, i);
                         i++; // double increment to pass the adjacent word in the next iteration 
                        
@@ -203,10 +208,29 @@ public class OpinionMining {
                 aspectBasedResults.get(deviceFeature).set(1, prevGeneralScore+1);
             }
             
+        }     
+        
+    }
+    
+    
+    /* Returns opinion mining results as JSON string. */
+    public String getResultsAsJSON() {
+        
+        JSONObject totalJsonReportObj= new JSONObject();
+        JSONObject singleJsonReportObj;
+        String key;
+        
+        for (String aspect : aspectBasedResults.keySet()) {
+            
+            singleJsonReportObj= new JSONObject()
+                                 .put("positiveCnt", aspectBasedResults.get(aspect).get(0))
+                                 .put("negativeCnt", aspectBasedResults.get(aspect).get(1));
+                                         
+            totalJsonReportObj.put(aspect,singleJsonReportObj);
+
         }
-       
         
-        
+        return totalJsonReportObj.toString();
     }
     
     
@@ -235,6 +259,10 @@ public class OpinionMining {
         sentenceOpinionWordsScores = new ArrayList<>();
         stemmedWords = new ArrayList<>();
         this.aspectBasedResults = new HashMap<>();
+        
+        
+        /* Initializing the Turkish morphology object */
+        this.morphology = TurkishMorphology.createWithDefaults();
         
         
         for (String paragraph : this.allTextsFromDB) {

@@ -32,7 +32,7 @@ public class MainProgram {
         
         /* Reading all paragraphs */
         DBOperations op = new DBOperations();
-        op.startConnection("ProjectDB", "Texts");
+        op.startConnection("ProjectDB", "Texts2");
         op.getAllTexts(allTexts);
 
         /* Extracting features */
@@ -46,7 +46,7 @@ public class MainProgram {
         /* Opinion Mining */
         OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
         omResults = om.startOpinionMining();
-        System.out.println(omResults);
+        System.out.println(om.getResultsAsJSON());
         
        
         
