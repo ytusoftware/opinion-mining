@@ -70,6 +70,17 @@ public class DBOperations {
         }
     }
     
+    public DBCursor findAll(){
+        if(!this.isClosed){
+            DBCursor cursor = this.collection.find();
+            return cursor;
+        }else{
+            System.err.println("Firstly you have to create connection!!!");
+            return null;            
+        }        
+    }
+    
+    
     // This method provides to insert the given object to the database
     public void insert(DBObject addedElement){
         // To use this method, the connection should be opened

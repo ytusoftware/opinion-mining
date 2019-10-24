@@ -53,7 +53,7 @@ public class StatExtraction {
         * Stores positive/negative words and sentences in seperate lists.
     */
     
-    private void extractInfo() throws IOException {
+    public void extractInfo() throws IOException {
         TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;     /* Sentence extractor from paragraph */
         TurkishTokenizer tokenizer = TurkishTokenizer.DEFAULT;                     /* Word extractor from sentence */
         List<String> allWords;                                                     /* Holds words extracted from sentence */
@@ -115,29 +115,29 @@ public class StatExtraction {
     /* Returns total # of sentences */
     public int getSentenceCnt() throws IOException {
         
-        extractInfo();
-        return this.sentenceCnt;
+        //extractInfo();
+	return this.sentenceCnt;
     }
     
     
     /* Returns total # of words */
     public int getWordCnt() throws IOException {
         
-        extractInfo();
+        //extractInfo();
         return this.wordCnt;
     }
     
     /* Returns total # of negative words */
     public int getNegativeWordCnt() throws IOException {
         
-        extractInfo();
+        //extractInfo();
         return this.negativeWordCnt;
     }
     
     /* Returns total # of positive words */
     public int getPositiveWordCnt() throws IOException {
         
-        extractInfo();
+        //extractInfo();
         return this.positiveWordCnt;
     }
     
