@@ -47,31 +47,8 @@ public class MainProgram {
         /* Opinion Mining */
         OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
         om.startOpinionMining();
-        //om.writeResultsToMongoDB();
+        //om.writeResultsToMongoDB(); -- > UNCOMMENT TO WRITE MONGODB!
         System.out.println(om.getResultsAsJSON());
-        
-       
-        
-        /*StatExtraction om = new StatExtraction();
-        int i = 1;
-        
-
-       
-        for (String allText : allTexts) {
-            om.setText(allText);
-            System.out.println(i +". Paragraf İstatistikleri");
-            System.out.println("------------------------------");
-            System.out.println("Cümle sayısı: " + om.getSentenceCnt());
-            System.out.println("Kelime sayısı: " + om.getWordCnt());
-            System.out.println("Olumlu kelime sayısı: " + om.getPositiveWordCnt());
-            System.out.println("Olumsuz kelime sayısı: " + om.getNegativeWordCnt());
-            System.out.println("Olumsuz kelimeler: " + om.getNegativeWordList());
-            System.out.println("Olumlu kelimeler: " + om.getPositiveWordList());
-            System.err.println();
-            
-            i++;
-        }*/
-        
        
                         
     }
