@@ -6,12 +6,15 @@
 package com.opmining;
 
 //import java.io.IOException;
+import com.mongodb.BasicDBObject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-
+import com.mongodb.DB;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 
 /**
  *
@@ -25,40 +28,50 @@ public class MainProgram {
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
-        
+
         ArrayList<String> allTexts = new ArrayList<>();
         HashSet<String> deviceFeatures = new HashSet<>();
         HashMap<String, ArrayList<Integer>> omResults = new HashMap<>();
-        
+
         /* Reading all paragraphs */
         DBOperations op = new DBOperations();
         op.startConnection("ProjectDB", "Texts2");
-        op.getAllTexts(allTexts);
-        
-              
-        
-        StatExtraction om = new StatExtraction();
-        int i = 1;
-        
 
-       
-        for (String allText : allTexts) {
-            om.setText(allText);
-            System.out.println(i +". Paragraf İstatistikleri");
-            System.out.println("------------------------------");
-            System.out.println("Cümle sayısı: " + om.getSentenceCnt());
-            System.out.println("Kelime sayısı: " + om.getWordCnt());
-            System.out.println("Olumlu kelime sayısı: " + om.getPositiveWordCnt());
-            System.out.println("Olumsuz kelime sayısı: " + om.getNegativeWordCnt());
-            System.out.println("Olumsuz kelimeler: " + om.getNegativeWordList());
-            System.out.println("Olumlu kelimeler: " + om.getPositiveWordList());
-            System.err.println();
-            
-            i++;
-        }
-        
-       
-                        
+        /* Extracting features */
+        FeatureExtraction extractor = new FeatureExtraction(allTexts);
+        extractor.setFrequencyThreshold(3);
+        extractor.extractAprioriFeatures();
+        deviceFeatures = extractor.getAprioriFeaturesAsSet();
+
+        extractor.printAprioriFeatures();
+
+        /* Opinion Mining */
+        OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
+        omResults = om.startOpinionMining();
+        System.out.println(omResults);
+
+
+	// Extracting Statistical Information for each text in the Database
+	System.out.println("------------------------------------------------------");
+	StatExtraction statExtractor = new StatExtraction();
+	DBCursor cursor = op.findAll();
+	int i = 1;
+	while(cursor.hasNext()){
+		String cont = (String)cursor.next().get("content");
+		statExtractor.setText(cont);
+		statExtractor.extractInfo();
+		System.out.println(i+".text from database");
+		System.out.println("-------------------------");
+		System.out.println("Sentence Counts:"+statExtractor.getSentenceCnt());
+		System.out.println("Word Counts:"+statExtractor.getWordCnt());
+		System.out.println("Positive Words:"+statExtractor.getPositiveWordCnt());
+		System.out.println("Negative Words:"+statExtractor.getNegativeWordCnt());
+		i += 1;
+	}
+
+
+
+
     }
-          
+
 }
