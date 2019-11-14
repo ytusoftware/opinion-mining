@@ -38,7 +38,7 @@ public class OpinionMining {
     private HashSet<String> positiveOpinionWords;                       /* All positive opinion words */
     private HashSet<String> negativeOpinionWords;                       /* All negative opinion words */
     private ArrayList<String> allTextsFromDB;                           /* Holds all paragraphs read from MongoDB */
-    private HashMap<String, ArrayList<Integer>> aspectBasedResults;     /* Holds aspect-based op mining results: {aspect:[posCnt, negCnt]} */
+    private HashMap<String, ArrayList<Integer>> aspectBasedResults;     /* Holds aspect-based op mining results: {aspect:[posCnt, negCnt, neutralCnt]} */
     private TurkishMorphology morphology;                               /* Used for finding stems of words */
     
     
@@ -195,12 +195,15 @@ public class OpinionMining {
                 distance = Math.abs(distance);
                 opinionScore = sentenceOpinionWordsScores.get(i);
                 
-                aggregation += (double)opinionScore/distance;
+                if (distance!=0) {
+                    aggregation += (double)opinionScore/distance;
+                }
+                
                 
             }
             if (!aspectBasedResults.containsKey(deviceFeature)) {
                 
-                aspectBasedResults.put(deviceFeature, new ArrayList<>(Arrays.asList(0,0)));
+                aspectBasedResults.put(deviceFeature, new ArrayList<>(Arrays.asList(0,0,0)));
             }
             
             /* Adding the final score to the general results */
@@ -209,10 +212,15 @@ public class OpinionMining {
                 prevGeneralScore = aspectBasedResults.get(deviceFeature).get(0);
                 aspectBasedResults.get(deviceFeature).set(0, prevGeneralScore+1);
             }
-            else{
+            else if (aggregation < 0.0){
                 /* Negative opinion count is increased */
                 prevGeneralScore = aspectBasedResults.get(deviceFeature).get(1);
                 aspectBasedResults.get(deviceFeature).set(1, prevGeneralScore+1);
+            }
+            /* Neutral */
+            else {
+                prevGeneralScore = aspectBasedResults.get(deviceFeature).get(2);
+                aspectBasedResults.get(deviceFeature).set(2, prevGeneralScore+1);
             }
             
         }     
@@ -231,7 +239,8 @@ public class OpinionMining {
             
             singleJsonReportObj= new JSONObject()
                                  .put("positiveCnt", aspectBasedResults.get(aspect).get(0))
-                                 .put("negativeCnt", aspectBasedResults.get(aspect).get(1));
+                                 .put("negativeCnt", aspectBasedResults.get(aspect).get(1))
+                                 .put("neutralCnt", aspectBasedResults.get(aspect).get(2));
                                          
             totalJsonReportObj.put(aspect,singleJsonReportObj);
 
@@ -256,7 +265,8 @@ public class OpinionMining {
         for (String aspect : aspectBasedResults.keySet()) {
             
             reportObj.append(aspect, new BasicDBObject("positiveOpinionCnt",aspectBasedResults.get(aspect).get(0))
-                                    .append("negativeOpinionCnt", aspectBasedResults.get(aspect).get(1)) );
+                                    .append("negativeOpinionCnt", aspectBasedResults.get(aspect).get(1))
+                                    .append("neutralOpinionCnt", aspectBasedResults.get(aspect).get(2)) );
         }       
         
         op.insert(reportObj);
