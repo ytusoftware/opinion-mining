@@ -1,4 +1,4 @@
-terkedilmiş
+﻿terkedilmiş
 nefret etmek
 iğrenç
 ortadan kaldırmak
@@ -460,3 +460,4 @@ eksik
 yok
 pişman
 vasat
+az

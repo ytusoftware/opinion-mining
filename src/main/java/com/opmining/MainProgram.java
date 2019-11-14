@@ -33,7 +33,7 @@ public class MainProgram {
         
         /* Reading all paragraphs */
         DBOperations op = new DBOperations();
-        op.startConnection("ProjectDB", "Texts");
+        op.startConnection("ProjectDB", "Texts2");
         op.getAllTexts(allTexts);
 
         /* Extracting features */
@@ -47,7 +47,7 @@ public class MainProgram {
         /* Opinion Mining */
         OpinionMining om = new OpinionMining(deviceFeatures, allTexts);
         om.startOpinionMining();
-        //om.writeResultsToMongoDB(); -- > UNCOMMENT TO WRITE MONGODB!
+        //om.writeResultsToMongoDB();
         System.out.println(om.getResultsAsJSON());
        
                         
