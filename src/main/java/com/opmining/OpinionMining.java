@@ -24,6 +24,8 @@ import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
 import org.json.JSONObject;
 import com.mongodb.DBObject;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 
 
 /**
@@ -60,6 +62,7 @@ public class OpinionMining {
         /* Reading opinion words from files */
         positiveWords = Files.readAllLines(Paths.get("positive-words.txt"), StandardCharsets.UTF_8);
         negativeWords = Files.readAllLines(Paths.get("negative-words.txt"), StandardCharsets.UTF_8);
+        
         
         /* Transferring words to the hash set data structure. (to get O(1) search complexity) */
         this.positiveOpinionWords.addAll(positiveWords);
@@ -272,6 +275,21 @@ public class OpinionMining {
         op.insert(reportObj);
         op.closeConnection();
                 
+    }
+    
+    /* Saves the opinion mining info to the txt file */
+    public static void saveInfo(String checkpointId, int textCnt) throws FileNotFoundException {
+
+        PrintWriter out;
+
+        out = new PrintWriter(System.getProperty("user.dir") + "/opMiningInfo.txt");
+
+        out.print(checkpointId);
+        out.println();
+        out.print(textCnt);
+        
+        out.close();
+
     }
     
     
