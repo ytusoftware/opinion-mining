@@ -131,7 +131,7 @@ public class MainProgram {
             op.closeConnection();
             
             /* Sleeping 5 minutes --> 300.000 ms */
-            Thread.sleep(300000);
+            Thread.sleep(60000);
 
         }      
         
@@ -139,3 +139,4 @@ public class MainProgram {
     }
           
 }
+ 

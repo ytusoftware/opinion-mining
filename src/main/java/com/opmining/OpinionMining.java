@@ -26,6 +26,9 @@ import org.json.JSONObject;
 import com.mongodb.DBObject;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 
 /**
@@ -259,18 +262,23 @@ public class OpinionMining {
         DBOperations op;
         BasicDBObject reportObj;
         BasicDBList list;
+        SimpleDateFormat sdf;
         
         op = new DBOperations();
-        op.startConnection("ProjectDB", "OpinionMiningResults");
+        op.startConnection("CasperTEYDEB", "opinionMiningApp_opinionminingresults");
         reportObj = new BasicDBObject();
         
+        /* Getting the stats by aspects */
+        reportObj.append("aspectStats", this.getResultsAsJSON());
         
-        for (String aspect : aspectBasedResults.keySet()) {
-            
-            reportObj.append(aspect, new BasicDBObject("positiveOpinionCnt",aspectBasedResults.get(aspect).get(0))
-                                    .append("negativeOpinionCnt", aspectBasedResults.get(aspect).get(1))
-                                    .append("neutralOpinionCnt", aspectBasedResults.get(aspect).get(2)) );
-        }       
+        /* Getting the number of comments included in the analysis */
+        reportObj.append("textCount", this.allTextsFromDB.size());
+        
+        /* Getting the beginning and end of time interval */
+        sdf = new SimpleDateFormat("dd MMMM yyyy HH:mm:ss", new Locale("tr"));
+        reportObj.append("reportDate", sdf.format(new Date()));
+        
+        reportObj.append("deviceName", "noName");
         
         op.insert(reportObj);
         op.closeConnection();
