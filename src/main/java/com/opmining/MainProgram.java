@@ -43,20 +43,41 @@ public class MainProgram {
 	StatExtraction statExtractor = new StatExtraction();
 	DBCursor cursor = op.findAll();
 	int i = 1;
+	
+	Publisher publisher = new Publisher();// This object publish the raw data to the Kafka Topic which name is test for now
+	Subscriber subscriber = new Subscriber("raw");// This object listen to the Kafka Topic which name is test, to take the raw data
+	
+	//We read the data from The Database for now, then publish them to the Kafka Topic
 	while(cursor.hasNext()){
-		String cont = (String)cursor.next().get("content");
-		statExtractor.setText(cont);
-		statExtractor.extractInfo();
-		System.out.println(i+".text from database");
-		System.out.println("-------------------------");
-		System.out.println("Sentence Counts:"+statExtractor.getSentenceCnt());
-		System.out.println("Word Counts:"+statExtractor.getWordCnt());
-		System.out.println("Positive Words:"+statExtractor.getPositiveWordCnt());
-		System.out.println("Negative Words:"+statExtractor.getNegativeWordCnt());
-		i += 1;
+            String content = (String)cursor.next().get("content");
+            System.out.println("Data--->"+content);
+            publisher.publish("raw",content);
 	}
+        
+        publisher.flush();
 
-
+	ArrayList<String> contents = subscriber.fetchAllData();
+	
+	// Let's create a new Publisher to publish the statistical information to the new Kafka Topic
+	Publisher publisher2 = new Publisher();
+	
+	// Let's create a new Subscriber to listen to the statistical information from the new Kafka Topic
+	Subscriber subscriber2 = new Subscriber("stat");	
+	
+	// Let's extract the statistical information from the data to send the Kafka Topic
+        for(String cont : contents){
+            statExtractor.setText(cont);
+            statExtractor.extractInfo();
+            String data = "{Text:"+cont+",Sentence Counts:"+statExtractor.getSentenceCnt()+",Word Counts:"+statExtractor.getWordCnt()+
+            ",Positive Words:"+statExtractor.getPositiveWordCnt()+",Negative Words:"+statExtractor.getNegativeWordCnt()+"}";
+            publisher2.publish("stat",data);
+        }	
+        publisher2.flush();
+        
+	ArrayList <String> conts = subscriber2.fetchAllData();
+	for(String t : conts){
+		System.out.println(t);
+	}
 
 
     }
