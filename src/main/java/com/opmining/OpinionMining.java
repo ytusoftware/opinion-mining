@@ -45,17 +45,19 @@ public class OpinionMining {
     private ArrayList<String> allTextsFromDB;                           /* Holds all paragraphs read from MongoDB */
     private HashMap<String, ArrayList<Integer>> aspectBasedResults;     /* Holds aspect-based op mining results: {aspect:[posCnt, negCnt, neutralCnt]} */
     private TurkishMorphology morphology;                               /* Used for finding stems of words */
+    private String deviceName;                                          /* Name of the device that is being opinion mined */
     
     
     
     
-    public OpinionMining(HashSet<String> deviceFeatures, ArrayList<String> allTextsFromDB) {
+    public OpinionMining(HashSet<String> deviceFeatures, ArrayList<String> allTextsFromDB, String deviceName) {
         this. deviceFeatures = deviceFeatures;
         this.allTextsFromDB = allTextsFromDB;
+        this.deviceName = deviceName;
         this.positiveOpinionWords = new HashSet<>();
         this.negativeOpinionWords = new HashSet<>();
     }
-    
+        
     /* Reads positive and negative opinion words from text files and store in opinionWords */
     private void readOpinionWords() throws IOException {
         
@@ -265,7 +267,7 @@ public class OpinionMining {
         SimpleDateFormat sdf;
         
         op = new DBOperations();
-        op.startConnection("CasperTEYDEB", "opinionMiningApp_opinionminingresults");
+        op.startConnection("CasperTEYDEB", "opinionMiningApp_opinionminingresult");
         reportObj = new BasicDBObject();
         
         /* Getting the stats by aspects */
@@ -278,7 +280,7 @@ public class OpinionMining {
         sdf = new SimpleDateFormat("dd MMMM yyyy HH:mm:ss", new Locale("tr"));
         reportObj.append("reportDate", sdf.format(new Date()));
         
-        reportObj.append("deviceName", "noName");
+        reportObj.append("deviceName", this.deviceName);
         
         op.insert(reportObj);
         op.closeConnection();
@@ -286,17 +288,13 @@ public class OpinionMining {
     }
     
     /* Saves the opinion mining info to the txt file */
-    public static void saveInfo(String checkpointId, int textCnt) throws FileNotFoundException {
-
-        PrintWriter out;
-
-        out = new PrintWriter(System.getProperty("user.dir") + "/opMiningInfo.txt");
-
-        out.print(checkpointId);
-        out.println();
-        out.print(textCnt);
+    public static void saveInfo(String checkpointId, int textCnt, String deviceName) throws FileNotFoundException {
         
-        out.close();
+        DBOperations op = new DBOperations();
+        op.startConnection("CasperTEYDEB", "opinionMiningApp_product");
+        op.update(new BasicDBObject("deviceName",deviceName), new BasicDBObject("deviceName",deviceName)
+                                                                    .append("checkpoint", checkpointId)
+                                                                    .append("prevCount", textCnt));
 
     }
     

@@ -5,22 +5,14 @@
  */
 package com.opmining;
 
-//import java.io.IOException;
-import com.mongodb.BasicDBObject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.lang.Integer;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 
 
 /**
@@ -48,83 +40,80 @@ public class MainProgram {
         int numDocuments;                                       /* Holds the number of documents in Mongo starting with the checkpoint document */
         PrintWriter out; 
         String nextId;
+        DBCursor devices;                                       /* MongoDB cursor holds device list */
+        String deviceName;
         
 
+     
         
-        
-        op.startConnection("ProjectDB", "Texts2");        
-        opMiningInfo = Files.readAllLines(Paths.get("OpMiningInfo.txt"), StandardCharsets.UTF_8);
-        
-        
-        /* Checking if Opinion Mining info txt file is empty. If it is, then the file is initialized */
-        if (opMiningInfo.isEmpty()) {       
-            OpinionMining.saveInfo(op.findFirstId(), op.getAllTextsCount());            
-        }
-        
-        op.closeConnection();
-        
-
-        /* Opinion Mining job loop */
-        while (true) {
+        /* Opinion Mining job loop (periodic) */
+        while (true) {           
             
             System.out.println("Job loop tester!!");
             
-            /* First clearing the lists */
-            opMiningTexts.clear();
-            allTexts.clear();
+            /* Starting the db connection */
+            op.startConnection("CasperTEYDEB", "opinionMiningApp_product");
             
+            /* Getting device list */
+            devices = op.getAllDevices();
             
-            /* 
-             * Previous Opinion Mining info is read from the text file 
-             * First element is the checkpoint document id 
-             * Second one is the # of documents collected starting with the checkpoint document) 
-            */
-            opMiningInfo = Files.readAllLines(Paths.get("OpMiningInfo.txt"), StandardCharsets.UTF_8);
-            initialDocumentId = opMiningInfo.get(0); // a.k.a. --> checkpoint document id
-            prevNumDocuments = Integer.parseInt(opMiningInfo.get(1)); // # of documents ready for op mining when previous check is occured
+            /* Checking for each device */
+            while (devices.hasNext()) {
 
-            /* Connecting to the MongoDB */
-            op.startConnection("ProjectDB", "Texts2");
-            
-            /* Getting initial op mining documents starting with checkpoint document and number */
-            numDocuments = op.getOpMiningTexts(initialDocumentId, opMiningTexts);
-            
-            /* 
-             * If the # of documents is greater than  100 OR the change rate between initial # and previous # greater
-             * than 50 percent, opinion mining is done.
-             */
-            if ( (numDocuments >= 100) || (numDocuments > prevNumDocuments*1.5)) {               
-
-                /* Reading all comments */
-                op.getAllTexts(allTexts);
-
+                /* First clearing the lists */
+                opMiningTexts.clear();
+                allTexts.clear();
                 
-                /* Extracting features */
-                extractor = new FeatureExtraction(allTexts);
-                extractor.setFrequencyThreshold(2);
-                extractor.extractAprioriFeatures();
-                deviceFeatures = extractor.getAprioriFeaturesAsSet();
-
-                extractor.printAprioriFeatures();
+                /* Getting previous check info for that device */
+                DBObject next = devices.next();
+                deviceName = next.get("deviceName").toString();
+                initialDocumentId = next.get("checkpoint").toString(); // a.k.a. --> checkpoint document id
+                prevNumDocuments = Integer.parseInt(next.get("prevCount").toString()); // # of documents ready for op mining when previous check is occured
                 
-                /* Opinion Mining */
-                om = new OpinionMining(deviceFeatures, opMiningTexts);
-                om.startOpinionMining();
-
-                //TODO 3: cihaz marka/model, raport baslangic/bitis tarihleri, comment sayisi bilgileri rapor objesine eklenecek
-                om.writeResultsToMongoDB();
-                System.out.println(om.getResultsAsJSON());
+                System.out.println("deviceName: "+deviceName);
                 
-                /* Updating the info txt file */
-                nextId = op.findNextId(initialDocumentId, numDocuments);               
-                OpinionMining.saveInfo(nextId, op.getOpMiningTexts(nextId, opMiningTexts));
-                                             
+                /* Switching to comment collection */
+                op.setDBandCollection("CasperTEYDEB", "opinionMiningApp_comment");
 
-            }
-            
-            /* Checkpoint id is not changed and num of documents is updated in the txt file */
-            else {
-                OpinionMining.saveInfo(opMiningInfo.get(0), numDocuments);
+                /* Getting initial op mining documents starting with checkpoint document for that device */
+                numDocuments = op.getOpMiningTexts(initialDocumentId, opMiningTexts, deviceName);
+                
+                /* 
+                 * If the # of documents is greater than  100 OR the change rate between initial # and previous # greater
+                 * than 50 percent, opinion mining is done.
+                 */
+                if ((numDocuments >= 100) || (numDocuments > prevNumDocuments * 1.5)) {
+
+                    /* Reading all comments for that device */
+                    op.getAllTexts(allTexts, deviceName);
+
+                    /* Extracting features for the device */
+                    extractor = new FeatureExtraction(allTexts);
+                    extractor.setFrequencyThreshold(2);
+                    extractor.extractAprioriFeatures();
+                    deviceFeatures = extractor.getAprioriFeaturesAsSet();
+
+                    extractor.printAprioriFeatures();
+
+                    /* Opinion Mining */
+                    om = new OpinionMining(deviceFeatures, opMiningTexts, deviceName);
+                    om.startOpinionMining();
+
+                    /* Writing to MongoDB */
+                    om.writeResultsToMongoDB();
+                    System.out.println(om.getResultsAsJSON());
+
+                    /* Updating the info in the Product collection */
+                    nextId = op.findNextId(initialDocumentId, numDocuments, deviceName);
+                    OpinionMining.saveInfo(nextId, op.getOpMiningTexts(nextId, opMiningTexts, deviceName), deviceName);
+
+                }
+                
+                /* Checkpoint id is not changed and num of documents is updated in device collection */
+                else {
+                    OpinionMining.saveInfo(initialDocumentId, numDocuments, deviceName);
+                }
+
             }
             
             /* Closing the database collection */
