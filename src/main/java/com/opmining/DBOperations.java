@@ -5,6 +5,7 @@
  */
 package com.opmining;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
@@ -12,6 +13,8 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import java.util.ArrayList;
+import java.util.List;
+import org.bson.types.ObjectId;
 
 /**
  *
@@ -60,14 +63,49 @@ public class DBOperations {
         if(!this.isClosed){
             DBCursor cursor = this.collection.find(element);
             DBCursor startCursor = cursor;
-            while(cursor.hasNext()){
-                System.out.println(cursor.next());
-            }
+            //while(cursor.hasNext()){
+              //  System.out.println(cursor.next());
+            //}
             return startCursor;
         }else{
             System.err.println("Firstly you have to create connection!!!");
             return null;
         }
+    }
+    
+    /* Fetches the first document id from MongoDB */
+    public String findFirstId() {
+
+        // To use this method, the connection should be opened
+        if (!this.isClosed) {
+            if (this.collection.findOne() != null) {
+                return this.collection.findOne().get("_id").toString();
+            }
+            
+        } else {
+            System.err.println("Firstly you have to create connection!!!");
+        }
+        
+        return null;
+    }
+    
+    
+    /* Fetches the next document id for the opinion mining */
+    public String findNextId(String checkpointId, int numDocuments, String deviceName) {
+        
+        List<DBObject> objectList;
+
+        if (!this.isClosed) {
+             objectList = this.collection.find(new BasicDBObject("_id",new BasicDBObject("$gte",new ObjectId(checkpointId))).
+                                                                            append("deviceName", deviceName)).toArray();
+             return objectList.get(numDocuments-1).get("_id").toString();
+             
+
+        } else {
+            System.err.println("Firstly you have to create connection!!!");
+            return null;
+        }
+
     }
     
     // This method provides to insert the given object to the database
@@ -113,11 +151,12 @@ public class DBOperations {
     }
     
     /*  Fetches all texts from the initial collection's documents */
-    public void getAllTexts(ArrayList<String> allText) {
+    public void getAllTexts(ArrayList<String> allText, String deviceName) {
         
         if(!this.isClosed) {                     
             /* Performing a read operation on the collection. */
-            DBCursor cursor = this.collection.find();
+            DBCursor cursor;
+            cursor = this.collection.find(new BasicDBObject("deviceName",deviceName));
                     
             try {
                 while(cursor.hasNext()) {
@@ -133,6 +172,62 @@ public class DBOperations {
         }
 
     }
+    
+    /*  Fetches all devices from the initial collection's documents */
+    public DBCursor getAllDevices() {
+        
+        if(!this.isClosed) {                     
+            /* Performing a read operation on the collection. */
+            DBCursor cursor = this.collection.find();
+            return cursor;
+        }
+        else {
+            System.err.println("Firstly you have to create connection!!!"); 
+            return null;
+        }
+
+    }
+    
+    /* Fetches the opinion mining texts for the specified device (last time interval texts) */
+    public int getOpMiningTexts(String checkpointDocumentId, ArrayList<String> opMiningTexts, String deviceName) {
+        
+        int numDocuments = -1;
+        
+        if (!this.isClosed) {
+            
+            /* Performing a read operation on the collection. */
+            DBCursor cursor = this.collection.find(new BasicDBObject("_id",new BasicDBObject("$gte",
+                                                                           new ObjectId(checkpointDocumentId))).
+                                                                           append("deviceName", deviceName)
+                                                                    );
+            numDocuments = cursor.count();
+            while (cursor.hasNext()) {
+                opMiningTexts.add((String) cursor.next().get("content"));
+
+            }
+                        
+        } else {
+            System.err.println("Firstly you have to create connection!!!");
+        }
+        
+        return numDocuments;
+    }
+    
+    /* Gets the all texts count in the db */
+    public int getAllTextsCount() {
+        DBCursor cursor = null;
+        if (!this.isClosed) {
+            cursor = this.collection.find();
+            return cursor.count();
+
+        } else {
+            System.err.println("The connection is already closed!!!");
+        }
+        
+        return -1;
+    }
+    
+    
     /*
     // The below side is written to test the operation of the database
     public static void main(String [] args){

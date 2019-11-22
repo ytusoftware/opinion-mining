@@ -24,6 +24,11 @@ import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
 import org.json.JSONObject;
 import com.mongodb.DBObject;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 
 /**
@@ -38,19 +43,21 @@ public class OpinionMining {
     private HashSet<String> positiveOpinionWords;                       /* All positive opinion words */
     private HashSet<String> negativeOpinionWords;                       /* All negative opinion words */
     private ArrayList<String> allTextsFromDB;                           /* Holds all paragraphs read from MongoDB */
-    private HashMap<String, ArrayList<Integer>> aspectBasedResults;     /* Holds aspect-based op mining results: {aspect:[posCnt, negCnt]} */
+    private HashMap<String, ArrayList<Integer>> aspectBasedResults;     /* Holds aspect-based op mining results: {aspect:[posCnt, negCnt, neutralCnt]} */
     private TurkishMorphology morphology;                               /* Used for finding stems of words */
+    private String deviceName;                                          /* Name of the device that is being opinion mined */
     
     
     
     
-    public OpinionMining(HashSet<String> deviceFeatures, ArrayList<String> allTextsFromDB) {
+    public OpinionMining(HashSet<String> deviceFeatures, ArrayList<String> allTextsFromDB, String deviceName) {
         this. deviceFeatures = deviceFeatures;
         this.allTextsFromDB = allTextsFromDB;
+        this.deviceName = deviceName;
         this.positiveOpinionWords = new HashSet<>();
         this.negativeOpinionWords = new HashSet<>();
     }
-    
+        
     /* Reads positive and negative opinion words from text files and store in opinionWords */
     private void readOpinionWords() throws IOException {
         
@@ -60,6 +67,7 @@ public class OpinionMining {
         /* Reading opinion words from files */
         positiveWords = Files.readAllLines(Paths.get("positive-words.txt"), StandardCharsets.UTF_8);
         negativeWords = Files.readAllLines(Paths.get("negative-words.txt"), StandardCharsets.UTF_8);
+        
         
         /* Transferring words to the hash set data structure. (to get O(1) search complexity) */
         this.positiveOpinionWords.addAll(positiveWords);
@@ -195,12 +203,15 @@ public class OpinionMining {
                 distance = Math.abs(distance);
                 opinionScore = sentenceOpinionWordsScores.get(i);
                 
-                aggregation += (double)opinionScore/distance;
+                if (distance!=0) {
+                    aggregation += (double)opinionScore/distance;
+                }
+                
                 
             }
             if (!aspectBasedResults.containsKey(deviceFeature)) {
                 
-                aspectBasedResults.put(deviceFeature, new ArrayList<>(Arrays.asList(0,0)));
+                aspectBasedResults.put(deviceFeature, new ArrayList<>(Arrays.asList(0,0,0)));
             }
             
             /* Adding the final score to the general results */
@@ -209,10 +220,15 @@ public class OpinionMining {
                 prevGeneralScore = aspectBasedResults.get(deviceFeature).get(0);
                 aspectBasedResults.get(deviceFeature).set(0, prevGeneralScore+1);
             }
-            else{
+            else if (aggregation < 0.0){
                 /* Negative opinion count is increased */
                 prevGeneralScore = aspectBasedResults.get(deviceFeature).get(1);
                 aspectBasedResults.get(deviceFeature).set(1, prevGeneralScore+1);
+            }
+            /* Neutral */
+            else {
+                prevGeneralScore = aspectBasedResults.get(deviceFeature).get(2);
+                aspectBasedResults.get(deviceFeature).set(2, prevGeneralScore+1);
             }
             
         }     
@@ -231,7 +247,8 @@ public class OpinionMining {
             
             singleJsonReportObj= new JSONObject()
                                  .put("positiveCnt", aspectBasedResults.get(aspect).get(0))
-                                 .put("negativeCnt", aspectBasedResults.get(aspect).get(1));
+                                 .put("negativeCnt", aspectBasedResults.get(aspect).get(1))
+                                 .put("neutralCnt", aspectBasedResults.get(aspect).get(2));
                                          
             totalJsonReportObj.put(aspect,singleJsonReportObj);
 
@@ -247,21 +264,38 @@ public class OpinionMining {
         DBOperations op;
         BasicDBObject reportObj;
         BasicDBList list;
+        SimpleDateFormat sdf;
         
         op = new DBOperations();
-        op.startConnection("ProjectDB", "OpinionMiningResults");
+        op.startConnection("CasperTEYDEB", "opinionMiningApp_opinionminingresult");
         reportObj = new BasicDBObject();
         
+        /* Getting the stats by aspects */
+        reportObj.append("aspectStats", this.getResultsAsJSON());
         
-        for (String aspect : aspectBasedResults.keySet()) {
-            
-            reportObj.append(aspect, new BasicDBObject("positiveOpinionCnt",aspectBasedResults.get(aspect).get(0))
-                                    .append("negativeOpinionCnt", aspectBasedResults.get(aspect).get(1)) );
-        }       
+        /* Getting the number of comments included in the analysis */
+        reportObj.append("textCount", this.allTextsFromDB.size());
+        
+        /* Getting the beginning and end of time interval */
+        sdf = new SimpleDateFormat("dd MMMM yyyy HH:mm:ss", new Locale("tr"));
+        reportObj.append("reportDate", sdf.format(new Date()));
+        
+        reportObj.append("deviceName", this.deviceName);
         
         op.insert(reportObj);
         op.closeConnection();
                 
+    }
+    
+    /* Saves the opinion mining info to the txt file */
+    public static void saveInfo(String checkpointId, int textCnt, String deviceName) throws FileNotFoundException {
+        
+        DBOperations op = new DBOperations();
+        op.startConnection("CasperTEYDEB", "opinionMiningApp_product");
+        op.update(new BasicDBObject("deviceName",deviceName), new BasicDBObject("deviceName",deviceName)
+                                                                    .append("checkpoint", checkpointId)
+                                                                    .append("prevCount", textCnt));
+
     }
     
     

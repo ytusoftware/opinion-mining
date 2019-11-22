@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import zemberek.morphology.TurkishMorphology;
 import zemberek.morphology.analysis.SingleAnalysis;
 import zemberek.morphology.analysis.WordAnalysis;
@@ -281,7 +283,7 @@ public class FeatureExtraction {
     
     
     /* By using possibleFeatureIndexMap filled by extractCandidateFeatures, runs SPMF lib Apriori method to extract features */
-    public void extractAprioriFeatures() throws UnsupportedEncodingException, IOException {
+    public void extractAprioriFeatures() throws UnsupportedEncodingException{
        
         String input;       /* Holds the absolute path for input file for the use of Apriori algorithm */
         String output;      /* This variable can be used for printing the Apriori algorithm results (stats) to a text file */
@@ -289,30 +291,31 @@ public class FeatureExtraction {
               
          
         
-        /* Extracting candidate features */
-        sentenceCnt = this.extractCandidateFeatures();
-        
-        
-        /* Opening the candidate feature transaction table */
-        input = fileToPath("aprioriInput.txt");
-	output = null;   // No text file output is requested
+        try {
+            /* Extracting candidate features */
+            sentenceCnt = this.extractCandidateFeatures();
 
-		
-	double minsup = this.frequencyThreshold/((double)100); // means a minsup of 2 transaction (we used a relative support)
-		
-	/* Applying the Apriori algorithm */
-	AlgoFPGrowth algorithm = new AlgoFPGrowth();
-		
-	/* Uncomment the following line to set the maximum pattern length (number of items per itemset, e.g. 3 ) */
-        algorithm.setMaximumPatternLength(2);
-		
-	//Itemsets result = null;
-                
-        this.result = algorithm.runAlgorithm(input, output, minsup);
+            /* Opening the candidate feature transaction table */
+            input = fileToPath("aprioriInput.txt");
+            output = null;   // No text file output is requested
 
-        /* Uncomment to see the Apriori algorith stats */
-        //algorithm.printStats();
-        //result.printItemsets(algorithm.getDatabaseSize());
+            double minsup = this.frequencyThreshold / ((double) 100); // means a minsup of 2 transaction (we used a relative support)
+
+            /* Applying the Apriori algorithm */
+            AlgoFPGrowth algorithm = new AlgoFPGrowth();
+
+            /* Uncomment the following line to set the maximum pattern length (number of items per itemset, e.g. 3 ) */
+            algorithm.setMaximumPatternLength(2);
+
+            //Itemsets result = null;
+            this.result = algorithm.runAlgorithm(input, output, minsup);
+
+            /* Uncomment the following line to see the Apriori algorithm stats */
+            //algorithm.printStats();
+            //result.printItemsets(algorithm.getDatabaseSize());
+        } catch (IOException ex) {
+            Logger.getLogger(FeatureExtraction.class.getName()).log(Level.SEVERE, null, ex);
+        }
                 	       
         
     }
