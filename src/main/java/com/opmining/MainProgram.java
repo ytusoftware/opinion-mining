@@ -40,8 +40,9 @@ public class MainProgram {
 
         /* Reading all paragraphs */
         DBOperations op = new DBOperations();
-        op.startConnection("ProjectDB", "Texts2");
+        op.startConnection("CasperTEYDEB", "opinionMiningApp_comment");
 
+           
 
 	// Extracting Statistical Information for each text in the Database
 	System.out.println("------------------------------------------------------");
@@ -57,24 +58,40 @@ public class MainProgram {
 	//We read the data from The Database for now, then publish them to the Kafka Topic
 	while(cursor.hasNext()){
             JSONObject json = new JSONObject();
-            String content = (String)cursor.next().get("content");
+            DBObject dbobject = cursor.next();
+            String content = (String)dbobject.get("content");
+            String testerId =(String)dbobject.get("testerId");
+            String testDate = (String)dbobject.get("testDate");
+            String deviceName = (String)dbobject.get("deviceName");
+            String companyName =(String)dbobject.get("companyName"); 
             json.put("content", content);
+            json.put("testerId",testerId);
+            json.put("testDate",testDate);
+            json.put("deviceName",deviceName);
+            json.put("companyName",companyName);
             System.out.println("Data--->"+json.toString());
             publisher.publish("commentStream",json.toString());
 	}
         
         publisher.flush();
         
+        DBOperations db = new DBOperations();
+        db.startConnection("CasperTEYDEB", "opinionMiningApp_product");
+                    
         // Subscriber should listen the Kafka Topic in the infinite loop
         while(true){
-
+            
+            System.out.println("------------------------------------------------------");           
+            System.out.println("Kafka dinlenmeye devam ediliyor...");
+            System.out.println("------------------------------------------------------");
+            
             ArrayList<String> contents = subscriber.fetchAllData();
 
             // Let's create a new Publisher to publish the statistical information to the new Kafka Topic
             Publisher publisher2 = new Publisher();
 
             // Let's create a new Subscriber to listen to the statistical information from the new Kafka Topic
-            Subscriber subscriber2 = new Subscriber("statCommentStream");	
+            Subscriber subscriber2 = new Subscriber("commentStatStream");	
             System.out.println("------------------------------------------------------");
 
             System.out.println("Kafka Topicten alinan comment ler için İstatistiksel"
@@ -85,21 +102,43 @@ public class MainProgram {
                 try {
                     JSONParser parser = new JSONParser();
                     JSONObject data = (JSONObject)parser.parse(cont);
+                    String testDate = (String)data.get("testDate");
+                    String testerId = (String)data.get("testerId");
+                    String deviceName = (String)data.get("deviceName");
+                    String companyName = (String)data.get("companyName");
                     String cont1 = (String)data.get("content");
                     statExtractor.setText(cont1);
                     statExtractor.extractInfo();
                     JSONObject json = new JSONObject();
-                    json.put("Text",cont1);
-                    json.put("Sentence Counts",statExtractor.getSentenceCnt());
-                    json.put("Word Counts",statExtractor.getWordCnt());
-                    json.put("Positive Words",statExtractor.getPositiveWordCnt());
-                    json.put("Negative Words",statExtractor.getNegativeWordCnt());
-                    publisher2.publish("statCommentStream",json.toString());
+                    json.put("companyName",companyName);
+                    json.put("deviceName",deviceName);
+                    json.put("testerId",testerId);
+                    json.put("testDate",testDate);
+                    json.put("content",cont1);
+                    json.put("sentenceCount",statExtractor.getSentenceCnt());
+                    json.put("wordCount",statExtractor.getWordCnt());
+                    json.put("positiveWordCount",statExtractor.getPositiveWordCnt());
+                    json.put("negativeWordCount",statExtractor.getNegativeWordCnt());
+                    publisher2.publish("commentStatStream",json.toString());
+                     // Let's write the statistical information to the database         
+                    op.update(new BasicDBObject("content",cont1).append("testerId",testerId),
+                            new BasicDBObject("companyName",companyName).append("deviceName",deviceName)
+                                    .append("testerId",testerId).append("testDate",testDate).append("content",cont1)
+                                    .append("sentenceCount",json.get("sentenceCount")).append("wordCount",json.get("wordCount"))
+                                    .append("positiveWordCount",json.get("positiveWordCount")).append("negativeWordCount",json.get("negativeWordCount"))
+                    );
+                    // When we first met with the device with this name, We should append it to the productDb
+                    if(!deviceFeatures.contains(deviceName)){
+                        deviceFeatures.add(deviceName);
+                        DBCursor dbCursor = op.find(new BasicDBObject("content",cont1));
+                        db.insert(new BasicDBObject("checkPoint",dbCursor.curr().get("_id")).append("deviceName",deviceName).append("prevCount",1).append("companyName",companyName)); 
+                    }
                 } catch (ParseException ex) {
                     Logger.getLogger(MainProgram.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }	
             publisher2.flush();
+            
             System.out.println("------------------------------------------------------");
         
             System.out.println("İstatistiksel bilgilerin Bulunduğu Topicten Veriler Alinip Ekranda Gösteriliyor");

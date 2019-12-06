@@ -44,14 +44,5 @@ public class Publisher {
         this.producer.flush();
     }
 
-    // This method is written to test for the Publisher
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		String data = "deneme2";
-		Publisher pubs  = new Publisher();
-		pubs.publish("denemePublisher",data);
-		pubs.flush();
-		System.out.println("gönderdim");
-	}
 
 }
