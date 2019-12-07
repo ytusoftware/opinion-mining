@@ -1,0 +1,5 @@
+/* Alt satirdaki deger, dakika cinsinden Opinion Mining modulunun MongoDByi kontrol sikligidir. */
+2
+/* Alt satirdaki deger Opinion Mining modulunde yapilan urun ozelligi cikarimi icin minimum yuzde degeridir. */
+/* Bu deger arttikca daha az ozellik bulunacaktir fakat bulunan anlamsiz özellik sayisi azalacaktır. */
+2

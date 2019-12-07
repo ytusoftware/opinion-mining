@@ -44,7 +44,8 @@ public class MainProgram {
         DBCursor devices;                                       /* MongoDB cursor holds device list */
         String deviceName;
         String companyName;
-        int period;                                             /* MongoDB check period */
+        int period;                                             /* MongoDB check period (config file) */
+        int minSupport;                                         /* Device feature extraction minimum support (config file) */
         
 
      
@@ -93,7 +94,9 @@ public class MainProgram {
 
                     /* Extracting features for the device */
                     extractor = new FeatureExtraction(allTexts);
-                    extractor.setFrequencyThreshold(2);
+                    minSupport = Integer.parseInt(Files.readAllLines(Paths.get("opinionMiningConfig.txt"), StandardCharsets.UTF_8).get(4));
+                    System.out.println("Extracting features.. (Min support: " + minSupport + ")");
+                    extractor.setFrequencyThreshold(minSupport);
                     extractor.extractAprioriFeatures();
                     deviceFeatures = extractor.getAprioriFeaturesAsSet();
 
@@ -123,8 +126,8 @@ public class MainProgram {
             /* Closing the database collection */
             op.closeConnection();
             
-            /* Reading MongoDB checking period from configuration file in minutes (opinionMiningPeriod.txt) */
-            period = Integer.parseInt(Files.readAllLines(Paths.get("opinionMiningPeriod.txt"), StandardCharsets.UTF_8).get(0));
+            /* Reading MongoDB checking period from configuration file in minutes (opinionMiningConfig.txt) */
+            period = Integer.parseInt(Files.readAllLines(Paths.get("opinionMiningConfig.txt"), StandardCharsets.UTF_8).get(1));
             
             
             System.out.println("Sleeping for " + period + " minutes");
