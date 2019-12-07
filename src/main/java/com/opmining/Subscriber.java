@@ -13,6 +13,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 
 import org.apache.kafka.common.TopicPartition;
 
@@ -21,13 +22,13 @@ public class Subscriber {
     private String topicName;
     private KafkaConsumer<String,String> kafkaConsumer;
     private TopicPartition topicPartition;
-    private ArrayList<String> dataList;
+    private HashSet<String> dataList;
     
     public Subscriber(String topicName) {
     	this.topicName = topicName;
     	this.kafkaConsumer = new KafkaConsumer<String, String>(createConsumerConfig());
     	this.topicPartition = new TopicPartition(topicName,0);     
-        this.dataList = new ArrayList<String>();
+        this.dataList = new HashSet<String>();
     }
     
     // We can fetch all existing data on the given topic, with this method
@@ -41,6 +42,9 @@ public class Subscriber {
         
         while(flag) {
 	    ConsumerRecords<String, String> records = this.kafkaConsumer.poll(100);
+            // If we don't want to miss any record in the kafka topic, we should look
+            // all of the records in the same topic
+            // But we should avoid the duplication, because of this We use dataList HashSet
 	    this.kafkaConsumer.seekToBeginning(Collections.singletonList(this.topicPartition));
             int i = 0;
 	    for (ConsumerRecord<String, String> record : records) {
