@@ -10,9 +10,11 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 
 /**
@@ -35,13 +37,15 @@ public class MainProgram {
         FeatureExtraction extractor;                            /* Aspect extraction class object */
         OpinionMining om;                                       /* Opinion miner class object */
         String initialDocumentId = null;                        /* Holds the id of the fist document which is not opinion mined */
-        List<String> opMiningInfo = null;                       /* Holds the info about previous op mining process */
         int prevNumDocuments;                                   /* Holds previous the number of documents in Mongo starting with the checkpoint document */
         int numDocuments;                                       /* Holds the number of documents in Mongo starting with the checkpoint document */
         PrintWriter out; 
         String nextId;
         DBCursor devices;                                       /* MongoDB cursor holds device list */
         String deviceName;
+        String companyName;
+        int period;                                             /* MongoDB check period (config file) */
+        int minSupport;                                         /* Device feature extraction minimum support (config file) */
         
 
      
@@ -67,6 +71,7 @@ public class MainProgram {
                 /* Getting previous check info for that device */
                 DBObject next = devices.next();
                 deviceName = next.get("deviceName").toString();
+                companyName = next.get("companyName").toString();
                 initialDocumentId = next.get("checkpoint").toString(); // a.k.a. --> checkpoint document id
                 prevNumDocuments = Integer.parseInt(next.get("prevCount").toString()); // # of documents ready for op mining when previous check is occured
                 
@@ -76,7 +81,7 @@ public class MainProgram {
                 op.setDBandCollection("CasperTEYDEB", "opinionMiningApp_comment");
 
                 /* Getting initial op mining documents starting with checkpoint document for that device */
-                numDocuments = op.getOpMiningTexts(initialDocumentId, opMiningTexts, deviceName);
+                numDocuments = op.getOpMiningTexts(initialDocumentId, opMiningTexts, deviceName, companyName);
                 
                 /* 
                  * If the # of documents is greater than  100 OR the change rate between initial # and previous # greater
@@ -85,18 +90,20 @@ public class MainProgram {
                 if ((numDocuments >= 100) || (numDocuments > prevNumDocuments * 1.5)) {
 
                     /* Reading all comments for that device */
-                    op.getAllTexts(allTexts, deviceName);
+                    op.getAllTexts(allTexts, deviceName, companyName);
 
                     /* Extracting features for the device */
                     extractor = new FeatureExtraction(allTexts);
-                    extractor.setFrequencyThreshold(2);
+                    minSupport = Integer.parseInt(Files.readAllLines(Paths.get("opinionMiningConfig.txt"), StandardCharsets.UTF_8).get(4));
+                    System.out.println("Extracting features.. (Min support: " + minSupport + ")");
+                    extractor.setFrequencyThreshold(minSupport);
                     extractor.extractAprioriFeatures();
                     deviceFeatures = extractor.getAprioriFeaturesAsSet();
 
                     extractor.printAprioriFeatures();
 
                     /* Opinion Mining */
-                    om = new OpinionMining(deviceFeatures, opMiningTexts, deviceName);
+                    om = new OpinionMining(deviceFeatures, opMiningTexts, deviceName, companyName);
                     om.startOpinionMining();
 
                     /* Writing to MongoDB */
@@ -104,14 +111,14 @@ public class MainProgram {
                     System.out.println(om.getResultsAsJSON());
 
                     /* Updating the info in the Product collection */
-                    nextId = op.findNextId(initialDocumentId, numDocuments, deviceName);
-                    OpinionMining.saveInfo(nextId, op.getOpMiningTexts(nextId, opMiningTexts, deviceName), deviceName);
+                    nextId = op.findNextId(initialDocumentId, numDocuments, deviceName, companyName);
+                    OpinionMining.saveInfo(nextId, op.getOpMiningTexts(nextId, opMiningTexts, deviceName, companyName), deviceName, companyName);
 
                 }
                 
                 /* Checkpoint id is not changed and num of documents is updated in device collection */
                 else {
-                    OpinionMining.saveInfo(initialDocumentId, numDocuments, deviceName);
+                    OpinionMining.saveInfo(initialDocumentId, numDocuments, deviceName, companyName);
                 }
 
             }
@@ -119,8 +126,14 @@ public class MainProgram {
             /* Closing the database collection */
             op.closeConnection();
             
+            /* Reading MongoDB checking period from configuration file in minutes (opinionMiningConfig.txt) */
+            period = Integer.parseInt(Files.readAllLines(Paths.get("opinionMiningConfig.txt"), StandardCharsets.UTF_8).get(1));
+            
+            
+            System.out.println("Sleeping for " + period + " minutes");
+            
             /* Sleeping 5 minutes --> 300.000 ms */
-            Thread.sleep(60000);
+            Thread.sleep(period*60000);
 
         }      
         

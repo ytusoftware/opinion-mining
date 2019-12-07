@@ -91,13 +91,14 @@ public class DBOperations {
     
     
     /* Fetches the next document id for the opinion mining */
-    public String findNextId(String checkpointId, int numDocuments, String deviceName) {
+    public String findNextId(String checkpointId, int numDocuments, String deviceName, String companyName) {
         
         List<DBObject> objectList;
 
         if (!this.isClosed) {
-             objectList = this.collection.find(new BasicDBObject("_id",new BasicDBObject("$gte",new ObjectId(checkpointId))).
-                                                                            append("deviceName", deviceName)).toArray();
+             objectList = this.collection.find(new BasicDBObject("_id",new BasicDBObject("$gte",new ObjectId(checkpointId)))
+                                                                            .append("deviceName", deviceName)
+                                                                            .append("companyName", companyName)).toArray();
              return objectList.get(numDocuments-1).get("_id").toString();
              
 
@@ -151,12 +152,14 @@ public class DBOperations {
     }
     
     /*  Fetches all texts from the initial collection's documents */
-    public void getAllTexts(ArrayList<String> allText, String deviceName) {
+    public void getAllTexts(ArrayList<String> allText, String deviceName, String companyName) {
         
         if(!this.isClosed) {                     
             /* Performing a read operation on the collection. */
             DBCursor cursor;
-            cursor = this.collection.find(new BasicDBObject("deviceName",deviceName));
+            cursor = this.collection.find(new BasicDBObject("deviceName",deviceName)
+                                                .append("companyName",companyName)
+                                            );
                     
             try {
                 while(cursor.hasNext()) {
@@ -189,7 +192,7 @@ public class DBOperations {
     }
     
     /* Fetches the opinion mining texts for the specified device (last time interval texts) */
-    public int getOpMiningTexts(String checkpointDocumentId, ArrayList<String> opMiningTexts, String deviceName) {
+    public int getOpMiningTexts(String checkpointDocumentId, ArrayList<String> opMiningTexts, String deviceName, String companyName) {
         
         int numDocuments = -1;
         
@@ -197,8 +200,9 @@ public class DBOperations {
             
             /* Performing a read operation on the collection. */
             DBCursor cursor = this.collection.find(new BasicDBObject("_id",new BasicDBObject("$gte",
-                                                                           new ObjectId(checkpointDocumentId))).
-                                                                           append("deviceName", deviceName)
+                                                                           new ObjectId(checkpointDocumentId)))
+                                                                           .append("deviceName", deviceName)
+                                                                           .append("companyName", companyName)
                                                                     );
             numDocuments = cursor.count();
             while (cursor.hasNext()) {

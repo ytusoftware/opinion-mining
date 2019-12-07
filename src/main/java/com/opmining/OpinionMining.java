@@ -7,7 +7,6 @@ package com.opmining;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,15 +16,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import zemberek.morphology.TurkishMorphology;
 import zemberek.morphology.analysis.WordAnalysis;
 import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
 import org.json.JSONObject;
-import com.mongodb.DBObject;
 import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -46,14 +42,15 @@ public class OpinionMining {
     private HashMap<String, ArrayList<Integer>> aspectBasedResults;     /* Holds aspect-based op mining results: {aspect:[posCnt, negCnt, neutralCnt]} */
     private TurkishMorphology morphology;                               /* Used for finding stems of words */
     private String deviceName;                                          /* Name of the device that is being opinion mined */
+    private String companyName;                                         /* Owner company of device */
     
     
     
-    
-    public OpinionMining(HashSet<String> deviceFeatures, ArrayList<String> allTextsFromDB, String deviceName) {
+    public OpinionMining(HashSet<String> deviceFeatures, ArrayList<String> allTextsFromDB, String deviceName, String companyName) {
         this. deviceFeatures = deviceFeatures;
         this.allTextsFromDB = allTextsFromDB;
         this.deviceName = deviceName;
+        this.companyName = companyName;
         this.positiveOpinionWords = new HashSet<>();
         this.negativeOpinionWords = new HashSet<>();
     }
@@ -281,6 +278,7 @@ public class OpinionMining {
         reportObj.append("reportDate", sdf.format(new Date()));
         
         reportObj.append("deviceName", this.deviceName);
+        reportObj.append("companyName", this.companyName);
         
         op.insert(reportObj);
         op.closeConnection();
@@ -288,13 +286,14 @@ public class OpinionMining {
     }
     
     /* Saves the opinion mining info to the txt file */
-    public static void saveInfo(String checkpointId, int textCnt, String deviceName) throws FileNotFoundException {
+    public static void saveInfo(String checkpointId, int textCnt, String deviceName, String companyName) throws FileNotFoundException {
         
         DBOperations op = new DBOperations();
         op.startConnection("CasperTEYDEB", "opinionMiningApp_product");
-        op.update(new BasicDBObject("deviceName",deviceName), new BasicDBObject("deviceName",deviceName)
+        op.update(new BasicDBObject("deviceName",deviceName).append("companyName", companyName), new BasicDBObject("deviceName",deviceName)
                                                                     .append("checkpoint", checkpointId)
-                                                                    .append("prevCount", textCnt));
+                                                                    .append("prevCount", textCnt)
+                                                                    .append("companyName",companyName));
 
     }
     
