@@ -131,7 +131,7 @@ public class MainProgram {
                     if(!deviceFeatures.contains(deviceName)){
                         deviceFeatures.add(deviceName);
                         DBCursor dbCursor = op.find(new BasicDBObject("content",cont1));
-                        db.insert(new BasicDBObject("checkPoint",dbCursor.curr().get("_id")).append("deviceName",deviceName).append("prevCount",1).append("companyName",companyName)); 
+                        db.insert(new BasicDBObject("checkpoint",dbCursor.curr().get("_id")).append("deviceName",deviceName).append("prevCount",1).append("companyName",companyName)); 
                     }
                 } catch (ParseException ex) {
                     Logger.getLogger(MainProgram.class.getName()).log(Level.SEVERE, null, ex);
