@@ -10,9 +10,11 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 
 /**
@@ -35,7 +37,6 @@ public class MainProgram {
         FeatureExtraction extractor;                            /* Aspect extraction class object */
         OpinionMining om;                                       /* Opinion miner class object */
         String initialDocumentId = null;                        /* Holds the id of the fist document which is not opinion mined */
-        List<String> opMiningInfo = null;                       /* Holds the info about previous op mining process */
         int prevNumDocuments;                                   /* Holds previous the number of documents in Mongo starting with the checkpoint document */
         int numDocuments;                                       /* Holds the number of documents in Mongo starting with the checkpoint document */
         PrintWriter out; 
@@ -43,6 +44,7 @@ public class MainProgram {
         DBCursor devices;                                       /* MongoDB cursor holds device list */
         String deviceName;
         String companyName;
+        int period;                                             /* MongoDB check period */
         
 
      
@@ -121,8 +123,14 @@ public class MainProgram {
             /* Closing the database collection */
             op.closeConnection();
             
+            /* Reading MongoDB checking period from configuration file in minutes (opinionMiningPeriod.txt) */
+            period = Integer.parseInt(Files.readAllLines(Paths.get("opinionMiningPeriod.txt"), StandardCharsets.UTF_8).get(0));
+            
+            
+            System.out.println("Sleeping for " + period + " minutes");
+            
             /* Sleeping 5 minutes --> 300.000 ms */
-            Thread.sleep(60000);
+            Thread.sleep(period*60000);
 
         }      
         
